@@ -34,6 +34,10 @@ A rendszer a rendelés feladásakor a következő paraméterek súlyozásával v
 4. **Futár elérhetősége és értékelése:** Aktív státusz és megbízhatósági mutatók ellenőrzése.
 
 <img width="1540" height="1440" alt="Futar App - Functionalities" src="https://github.com/user-attachments/assets/ecb88d55-ac29-4aa0-b04a-65f26127878c" />
-## Basic Database Structure - PosgreSQL - Neon DB
+
+
+### Basic Database Structure - PosgreSQL - Neon DB
+
+
 <img width="1255" height="662" alt="QuickDBD-export" src="https://github.com/user-attachments/assets/a8c9f7bc-2a7d-4871-83c0-4291555ec1b2" />
 
