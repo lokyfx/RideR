@@ -1,13 +1,44 @@
 import { useState } from 'react'
 import './LoginPage.css'
 
-function LoginPage() {
+function LoginPage({ onLogin }) {
   const [message, setMessage] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    setMessage('A bejelentkezés még nincs backendhez kötve.')
+    setMessage('')
+    setIsSubmitting(true)
+
+    const formData = new FormData(event.currentTarget)
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.get('username'),
+          password: formData.get('password'),
+        }),
+      })
+
+      if (response.status === 401) {
+        setMessage('Hibás felhasználónév vagy jelszó.')
+        return
+      }
+
+      if (!response.ok) {
+        setMessage('A bejelentkezés nem sikerült. Próbáld újra később.')
+        return
+      }
+
+      onLogin()
+    } catch {
+      setMessage('A bejelentkezési szolgáltatás nem érhető el.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -43,7 +74,9 @@ function LoginPage() {
             </button>
           </div>
 
-          <button type="submit">Belépés</button>
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Belépés…' : 'Belépés'}
+          </button>
           {message && <p className="login-message" role="status">{message}</p>}
         </form>
         <p className="register-prompt">

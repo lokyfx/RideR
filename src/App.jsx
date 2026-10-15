@@ -14,7 +14,11 @@ function App() {
         <button type="button" onClick={() => setView('restaurant')}>Étterem</button>
         <button type="button" onClick={() => setView('login')}>Belépés</button>
       </nav>
-      {view === 'login' ? <LoginPage /> : view === 'rider' ? <RiderDashboard /> : <RestaurantDashboard />}
+      {view === 'login'
+        ? <LoginPage onLogin={() => setView('restaurant')} />
+        : view === 'rider'
+          ? <RiderDashboard />
+          : <RestaurantDashboard />}
     </>
   )
 }

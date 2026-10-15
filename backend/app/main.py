@@ -1,4 +1,7 @@
 from datetime import date
+import hashlib
+import hmac
+import os
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -56,14 +59,49 @@ orders: list[dict[str, Any]] = [
     },
 ]
 
+auth_username = os.environ.get("AUTH_USERNAME", "demo")
+auth_password = os.environ.get("AUTH_PASSWORD", "demo123")
+auth_salt = os.urandom(16)
+auth_password_hash = hashlib.pbkdf2_hmac(
+    "sha256",
+    auth_password.encode("utf-8"),
+    auth_salt,
+    200_000,
+)
+
 
 class RiderStatus(BaseModel):
     online: bool
 
 
+class LoginCredentials(BaseModel):
+    username: str
+    password: str
+
+
 @app.get("/api/health")
 def health_check() -> dict[str, str]:
     return {"status": "ok", "message": "Backend connection is working"}
+
+
+@app.post("/api/login")
+def login(credentials: LoginCredentials) -> dict[str, str]:
+    provided_hash = hashlib.pbkdf2_hmac(
+        "sha256",
+        credentials.password.encode("utf-8"),
+        auth_salt,
+        200_000,
+    )
+    username_matches = hmac.compare_digest(
+        credentials.username.encode("utf-8"),
+        auth_username.encode("utf-8"),
+    )
+    password_matches = hmac.compare_digest(provided_hash, auth_password_hash)
+
+    if not username_matches or not password_matches:
+        raise HTTPException(status_code=401, detail="Hibás felhasználónév vagy jelszó.")
+
+    return {"username": auth_username}
 
 
 @app.get("/api/dashboard")

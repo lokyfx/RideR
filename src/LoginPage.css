@@ -87,6 +87,11 @@
 	background: #196543;
 }
 
+.login-form button:disabled {
+	background: #738078;
+	cursor: wait;
+}
+
 .login-message {
 	margin: 4px 0 0;
 	color: var(--muted);
