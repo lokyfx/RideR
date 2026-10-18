@@ -35,10 +35,28 @@ function RestaurantDashboard() {
   }
 
   function addToOrder(food) {
-    setOrder((current) => [...current, food])
+    setOrder((current) => {
+      const existingFood = current.find((item) => item.id === food.id)
+
+      if (existingFood) {
+        return current.map((item) => (
+          item.id === food.id ? { ...item, quantity: (item.quantity || 0) + 1 } : item
+        ))
+      }
+
+      return [...current, { ...food, quantity: 1 }]
+    })
   }
 
-  const total = order.reduce((sum, food) => sum + food.price, 0)
+  function updateQuantity(foodId, change) {
+    setOrder((current) => current
+      .map((item) => item.id === foodId
+        ? { ...item, quantity: (item.quantity || 1) + change }
+        : item)
+      .filter((item) => item.quantity > 0))
+  }
+
+  const total = order.reduce((sum, food) => sum + Number(food.price) * (food.quantity || 1), 0)
 
   return (
     <main className="dashboard-shell">
@@ -76,7 +94,16 @@ function RestaurantDashboard() {
           <h2 style={{ fontSize: 28, marginBottom: 24 }}>Rendelés #{order.length ? '001' : '---'}</h2>
           {order.length === 0 ? <p style={{ color: 'var(--muted)' }}>Válassz ételt az étlapról.</p> : (
             <div className="order-list">
-              {order.map((food, index) => <div className="order-card" key={`${food.id}-${index}`}><span className="order-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span></div>)}
+              {order.map((food) => (
+                <div className="order-card" key={food.id}>
+                  <span className="order-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span>
+                  <span className="quantity-control">
+                    <button className="quantity-button" type="button" onClick={() => updateQuantity(food.id, -1)} aria-label={`${food.name} mennyiségének csökkentése`}>−</button>
+                    <span className="quantity-value">{food.quantity}</span>
+                    <button className="quantity-button" type="button" onClick={() => updateQuantity(food.id, 1)} aria-label={`${food.name} mennyiségének növelése`}>+</button>
+                  </span>
+                </div>
+              ))}
               <div className="orders-heading" style={{ marginTop: 12 }}><h2>Összesen</h2><strong>{total.toFixed(2)} €</strong></div>
             </div>
           )}
