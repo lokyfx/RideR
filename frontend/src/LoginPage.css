@@ -1,0 +1,128 @@
+.login-page {
+	min-height: 100vh;
+	background: var(--paper);
+	color: var(--ink);
+	font-family: 'Manrope', sans-serif;
+}
+
+.login-card {
+	width: min(100% - 40px, 420px);
+	padding: 38px;
+	margin: 10vh auto 0;
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	background: #fff;
+	box-shadow: 0 16px 48px rgba(31, 51, 39, 0.07);
+}
+
+.login-card h1 {
+	margin-bottom: 28px;
+}
+
+.login-form {
+	display: grid;
+	gap: 10px;
+}
+
+.login-form label {
+	margin-top: 8px;
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.login-form input {
+	width: 100%;
+	padding: 12px 14px;
+	border: 1px solid var(--line);
+	border-radius: 9px;
+	background: #fbfcfb;
+	color: var(--ink);
+	font: inherit;
+}
+
+.login-form input:focus {
+	border-color: var(--green);
+	outline: 3px solid var(--mint);
+}
+
+.password-field {
+	position: relative;
+}
+
+.password-field input {
+	padding-right: 48px;
+}
+
+.password-field .password-toggle {
+	position: absolute;
+	top: 50%;
+	right: 12px;
+	padding: 4px;
+	margin: 0;
+	transform: translateY(-50%);
+	border: 0;
+	background: transparent;
+	color: #000;
+	font-size: 18px;
+	cursor: pointer;
+}
+
+.password-field .password-toggle:hover {
+	background: transparent;
+	color: #000;
+}
+
+.login-form button {
+	padding: 12px;
+	margin-top: 14px;
+	border: 0;
+	border-radius: 9px;
+	background: var(--green);
+	color: #fff;
+	font-weight: 800;
+	cursor: pointer;
+}
+
+.login-form button:hover {
+	background: #196543;
+}
+
+.login-form button:disabled {
+	background: #738078;
+	cursor: wait;
+}
+
+.login-message {
+	margin: 4px 0 0;
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.register-prompt {
+	margin: 24px 0 0;
+	color: var(--muted);
+	font-size: 12px;
+	text-align: center;
+}
+
+.register-link {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--green);
+	font: inherit;
+	font-weight: 800;
+	cursor: pointer;
+}
+
+.register-link:hover {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+	.login-card {
+		padding: 28px 22px;
+		margin-top: 7vh;
+	}
+}
