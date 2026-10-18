@@ -21,6 +21,15 @@ A bejelentkezést követően a felhasználók a szerepkörüknek megfelelő fel�
 * **Cím és részletek (Delivery Location + Details):** Átvételi és leadási címek, valamint a kapcsolódó instrukciók megtekintése.
 * **Státuszlezárás (Complete / Incomplete):** A kézbesítés sikerességének vagy sikertelenségének rögzítése.
 
+### Adatbázis-struktúra (Database Schema)
+
+- **Felhasználók (User):** A rendszer központi felhasználói táblája, ahol a jogosultsági szint (`Role`) definiálja a megrendelői, éttermi vagy futár szerepkört, kapcsolatot biztosítva az ügyfél (`CustomerID`) és a futár (`RiderID`) entitások felé.
+- **Éttermek (Restaurant):** A partner éttermek törzsadatait, elnevezését és fizikai elérhetőségét (`Name`, `Address`) tároló entitás.
+- **Termékek / Étlap (Product):** Az éttermek kínálatát képező tételek nyilvántartása, amely az adott étteremhez rendelve (`RestaurantID`) rögzíti az árat, elérhetőséget és leírást.
+- **Rendelés fejléce (Order):** Egy adott tranzakció összesített adatai, amely összefogja a megrendelőt (`CustomerID`), az éttermet (`RestaurantID`), a végösszeget (`TotalAmount`), a rendelési státuszt és az időbélyeget.
+- **Rendelési tételek (OrderLine):** A rendelések és termékek közötti több-a-többhöz (N:M) kapcsolatot feloldó kapcsolótábla, amely rögzíti a kiválasztott tételt (`ProductID`), a rendelt mennyiséget (`Quantity`) és a vásárláskori egységárat (`UnitPrice`).
+- **Kiszállítás (Delivery):** A kézbesítési folyamatot menedzselő modul, amely az adott megrendeléshez (`OrderID`) kijelöli a futárt (`RiderID`), nyomon követi az aktuális logisztikai státuszt és a sikeres kézbesítés idejét (`DeliveredAt`).
+
 ## Futárkiosztási logika (Dispatch Logic)
 
 A rendszer a rendelés feladásakor a következő paraméterek súlyozásával választja ki a legmegfelelőbb futárt:
