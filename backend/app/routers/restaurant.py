@@ -8,6 +8,19 @@ from app.schemas import ProductCreate
 router = APIRouter(prefix="/api/restaurant", tags=["restaurant"])
 
 
+@router.get("/name")
+def get_restaurant_name() -> dict[str, str]:
+    with get_connection() as connection:
+        restaurant = connection.execute(
+            "SELECT name FROM restaurant WHERE restaurant_id = %s",
+            (RESTAURANT_ID,),
+        ).fetchone()
+
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found.")
+    return {"name": restaurant["name"]}
+
+
 @router.get("/products")
 def get_products() -> list[dict[str, Any]]:
     with get_connection() as connection:
