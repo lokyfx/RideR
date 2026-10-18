@@ -70,7 +70,7 @@ function RestaurantDashboard() {
           <p className="eyebrow">Étlap kezelése</p>
           <h1>Mai <span>ételek.</span></h1>
 
-          <form onSubmit={addFood} style={{ display: 'grid', gap: 8, marginBottom: 28 }}>
+          <form className="restaurant-form" onSubmit={addFood} style={{ display: 'grid', gap: 8, marginBottom: 19 }}>
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Étel neve" />
             <input value={price} onChange={(event) => setPrice(event.target.value)} type="number" min="0" step="0.01" placeholder="Ár (€)" />
             <button className="duty-toggle active" type="submit">+ Étel hozzáadása</button>
