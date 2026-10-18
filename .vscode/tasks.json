@@ -4,7 +4,7 @@
     {
       "label": "frontend: dev",
       "type": "shell",
-      "command": "npm run dev -- --host 127.0.0.1",
+      "command": "npm run dev -- --host 127.0.0.1 --port 5173",
       "options": {
         "cwd": "${workspaceFolder}/frontend"
       },
@@ -17,7 +17,7 @@
         "background": {
           "activeOnStart": true,
           "beginsPattern": ".*",
-          "endsPattern": "http://localhost:5173/"
+          "endsPattern": ".*http://(localhost|127\\.0\\.0\\.1):5173/.*"
         }
       }
     }
