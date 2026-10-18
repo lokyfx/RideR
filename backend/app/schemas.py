@@ -14,3 +14,5 @@ class ProductCreate(BaseModel):
     name: str
     description: str | None = None
     price: float
+    category_id: int
+    stock: int

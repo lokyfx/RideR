@@ -10,6 +10,12 @@ export async function getRestaurantName() {
   return response.json()
 }
 
+export async function getCategories() {
+  const response = await fetch('/api/restaurant/categories')
+  if (!response.ok) throw new Error('Categories could not be loaded')
+  return response.json()
+}
+
 export async function createProduct(product) {
   const response = await fetch('/api/restaurant/products', {
     method: 'POST',

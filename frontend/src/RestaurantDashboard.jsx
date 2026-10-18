@@ -1,20 +1,24 @@
 import { useEffect, useState } from 'react'
-import { createProduct, getProducts, getRestaurantName } from './restaurantApi.js'
+import { createProduct, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
 
 function RestaurantDashboard() {
   const [foods, setFoods] = useState([])
+  const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
   const [order, setOrder] = useState([])
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+  const [stock, setStock] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getProducts(), getRestaurantName()])
-      .then(([products, restaurant]) => {
+    Promise.all([getProducts(), getRestaurantName(), getCategories()])
+      .then(([products, restaurant, categoryList]) => {
         setFoods(products)
         setRestaurantName(restaurant.name)
+        setCategories(categoryList)
       })
       .catch(() => setError('Az ételek nem tölthetők be.'))
       .finally(() => setIsLoading(false))
@@ -25,10 +29,17 @@ function RestaurantDashboard() {
     if (!name.trim() || !price) return
 
     try {
-      const food = await createProduct({ name: name.trim(), price: Number(price) })
+      const food = await createProduct({
+        name: name.trim(),
+        price: Number(price),
+        category_id: Number(categoryId),
+        stock: Number(stock),
+      })
       setFoods((current) => [...current, food])
       setName('')
       setPrice('')
+      setCategoryId('')
+      setStock('')
     } catch {
       setError('Az étel mentése nem sikerült.')
     }
@@ -73,6 +84,11 @@ function RestaurantDashboard() {
           <form className="restaurant-form" onSubmit={addFood} style={{ display: 'grid', gap: 8, marginBottom: 19 }}>
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Étel neve" />
             <input value={price} onChange={(event) => setPrice(event.target.value)} type="number" min="0" step="0.01" placeholder="Ár (€)" />
+            <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} required>
+              <option value="">Kategória kiválasztása</option>
+              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+            </select>
+            <input value={stock} onChange={(event) => setStock(event.target.value)} type="number" min="0" step="1" placeholder="Készlet" required />
             <button className="duty-toggle active" type="submit">+ Étel hozzáadása</button>
           </form>
           {error && <p className="login-message" role="status">{error}</p>}
