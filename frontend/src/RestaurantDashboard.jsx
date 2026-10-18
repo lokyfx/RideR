@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { createProduct, getProducts } from './restaurantApi.js'
+import { createProduct, getProducts, getRestaurantName } from './restaurantApi.js'
 
 function RestaurantDashboard() {
   const [foods, setFoods] = useState([])
+  const [restaurantName, setRestaurantName] = useState('Restaurant')
   const [order, setOrder] = useState([])
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
@@ -10,8 +11,11 @@ function RestaurantDashboard() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    getProducts()
-      .then(setFoods)
+    Promise.all([getProducts(), getRestaurantName()])
+      .then(([products, restaurant]) => {
+        setFoods(products)
+        setRestaurantName(restaurant.name)
+      })
       .catch(() => setError('Az ételek nem tölthetők be.'))
       .finally(() => setIsLoading(false))
   }, [])
@@ -39,7 +43,7 @@ function RestaurantDashboard() {
   return (
     <main className="dashboard-shell">
       <header className="topbar">
-        <div className="brand-mark"><span>R</span>Restaurant</div>
+        <div className="brand-mark"><span>R</span>{restaurantName}</div>
         <div className="topbar-meta"><span className="status-dot is-online" /> Nyitva <span className="avatar">RE</span></div>
       </header>
 
