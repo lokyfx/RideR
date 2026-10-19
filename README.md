@@ -30,6 +30,9 @@ A bejelentkezést követően a felhasználók a szerepkörüknek megfelelő fel�
 - **Rendelési tételek (OrderLine):** A rendelések és termékek közötti több-a-többhöz (N:M) kapcsolatot feloldó kapcsolótábla, amely rögzíti a kiválasztott tételt (`ProductID`), a rendelt mennyiséget (`Quantity`) és a vásárláskori egységárat (`UnitPrice`).
 - **Kiszállítás (Delivery):** A kézbesítési folyamatot menedzselő modul, amely az adott megrendeléshez (`OrderID`) kijelöli a futárt (`RiderID`), nyomon követi az aktuális logisztikai státuszt és a sikeres kézbesítés idejét (`DeliveredAt`).
 
+
+
+
 ## Futárkiosztási logika (Dispatch Logic)
 
 A rendszer a rendelés feladásakor a következő paraméterek súlyozásával választja ki a legmegfelelőbb futárt:
@@ -49,4 +52,8 @@ A rendszer a rendelés feladásakor a következő paraméterek súlyozásával v
 
 
 <img width="1255" height="662" alt="QuickDBD-export" src="https://github.com/user-attachments/assets/a8c9f7bc-2a7d-4871-83c0-4291555ec1b2" />
+
+### Basic Structure - Lucidchart
+<img width="2160" height="1390" alt="image" src="https://github.com/user-attachments/assets/57f0367f-7241-4a28-a127-e4130ffbf19c" />
+
 
