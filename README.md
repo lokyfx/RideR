@@ -56,4 +56,4 @@ A rendszer a rendelés feladásakor a következő paraméterek súlyozásával v
 ### Basic Structure - Lucidchart
 <img width="2160" height="1390" alt="image" src="https://github.com/user-attachments/assets/57f0367f-7241-4a28-a127-e4130ffbf19c" />
 
-
+Diagram from user perspective to do
