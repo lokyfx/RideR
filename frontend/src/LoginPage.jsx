@@ -35,11 +35,20 @@ function LoginPage({ onLogin }) {
       }
 
       if (!response.ok) {
-        setMessage(
-          isRegistering
-            ? 'A regisztráció nem sikerült. Próbáld újra később.'
-            : 'A bejelentkezés nem sikerült. Próbáld újra később.',
-        )
+        let errorMessage = isRegistering
+          ? 'A regisztráció nem sikerült. Próbáld újra később.'
+          : 'A bejelentkezés nem sikerült. Próbáld újra később.'
+
+        try {
+          const error = await response.json()
+          if (typeof error.detail === 'string') {
+            errorMessage = error.detail
+          }
+        } catch {
+          // Keep the generic message when the server does not return JSON.
+        }
+
+        setMessage(errorMessage)
         return
       }
 

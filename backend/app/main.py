@@ -2,13 +2,17 @@ import hashlib
 import hmac
 import os
 import secrets
+from pathlib import Path
 from typing import Any
 
 import psycopg
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from psycopg.rows import dict_row
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 app = FastAPI(title="Riderboard API")
 
