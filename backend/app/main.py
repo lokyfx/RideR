@@ -1,10 +1,13 @@
+import hashlib
+import hmac
 import os
+import secrets
 from typing import Any
 
 import psycopg
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from psycopg.rows import dict_row
 
 app = FastAPI(title="Riderboard API")
@@ -20,6 +23,7 @@ app.add_middleware(
 DATABASE_URL = os.environ.get("DATABASE_URL")
 rider_online = True
 selected_order = None
+PASSWORD_HASH_ITERATIONS = 600_000
 
 
 def get_connection() -> psycopg.Connection:
@@ -37,6 +41,33 @@ class LoginCredentials(BaseModel):
     password: str
 
 
+class RegistrationCredentials(BaseModel):
+    username: str
+    password: str = Field(min_length=8)
+
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_bytes(16)
+    password_hash = hashlib.pbkdf2_hmac(
+        "sha256", password.encode(), salt, PASSWORD_HASH_ITERATIONS
+    )
+    return f"pbkdf2_sha256${PASSWORD_HASH_ITERATIONS}${salt.hex()}${password_hash.hex()}"
+
+
+def verify_password(password: str, stored_hash: str) -> bool:
+    try:
+        algorithm, iterations, salt, expected_hash = stored_hash.split("$")
+        if algorithm != "pbkdf2_sha256":
+            return hmac.compare_digest(stored_hash, password)
+        actual_hash = hashlib.pbkdf2_hmac(
+            "sha256", password.encode(), bytes.fromhex(salt), int(iterations)
+        ).hex()
+    except ValueError:
+        return hmac.compare_digest(stored_hash, password)
+
+    return hmac.compare_digest(actual_hash, expected_hash)
+
+
 @app.get("/api/health")
 def health_check() -> dict[str, str]:
     return {"status": "ok", "message": "Backend connection is working"}
@@ -50,10 +81,27 @@ def login(credentials: LoginCredentials) -> dict[str, str]:
             (credentials.username,),
         ).fetchone()
 
-    if not user or user["password_hash"] != credentials.password:
+    if not user or not verify_password(credentials.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Hibás felhasználónév vagy jelszó.")
 
     return {"username": user["username"]}
+
+
+@app.post("/api/register", status_code=201)
+def register(credentials: RegistrationCredentials) -> dict[str, str]:
+    try:
+        with get_connection() as connection:
+            connection.execute(
+                """
+                INSERT INTO app_user (username, password_hash, role)
+                VALUES (%s, %s, 'customer')
+                """,
+                (credentials.username, hash_password(credentials.password)),
+            )
+    except psycopg.errors.UniqueViolation as error:
+        raise HTTPException(status_code=409, detail="Ez a felhasználónév már foglalt.") from error
+
+    return {"username": credentials.username}
 
 
 @app.get("/api/dashboard")
