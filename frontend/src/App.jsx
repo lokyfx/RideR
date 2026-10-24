@@ -6,6 +6,7 @@ import './App.css'
 
 function App() {
   const [view, setView] = useState('restaurant')
+  const [user, setUser] = useState(null)
 
   return (
     <>
@@ -15,10 +16,13 @@ function App() {
         <button type="button" onClick={() => setView('login')}>Belépés</button>
       </nav>
       {view === 'login'
-        ? <LoginPage onLogin={() => setView('restaurant')} />
+        ? <LoginPage onLogin={(loggedInUser) => {
+          setUser(loggedInUser)
+          setView(loggedInUser.role === 'restaurant' ? 'restaurant' : 'rider')
+        }} />
         : view === 'rider'
           ? <RiderDashboard />
-          : <RestaurantDashboard />}
+          : <RestaurantDashboard username={user?.username} />}
     </>
   )
 }

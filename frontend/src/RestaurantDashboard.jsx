@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createProduct, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
 
-function RestaurantDashboard() {
+function RestaurantDashboard({ username }) {
   const [foods, setFoods] = useState([])
   const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
@@ -14,7 +14,11 @@ function RestaurantDashboard() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getProducts(), getRestaurantName(), getCategories()])
+    Promise.all([
+      getProducts(username),
+      getRestaurantName(username),
+      getCategories(username),
+    ])
       .then(([products, restaurant, categoryList]) => {
         setFoods(products)
         setRestaurantName(restaurant.name)
@@ -22,7 +26,7 @@ function RestaurantDashboard() {
       })
       .catch(() => setError('Az ételek nem tölthetők be.'))
       .finally(() => setIsLoading(false))
-  }, [])
+  }, [username])
 
   async function addFood(event) {
     event.preventDefault()
@@ -34,7 +38,7 @@ function RestaurantDashboard() {
         price: Number(price),
         category_id: Number(categoryId),
         stock: Number(stock),
-      })
+      }, username)
       setFoods((current) => [...current, food])
       setName('')
       setPrice('')

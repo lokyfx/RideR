@@ -62,7 +62,7 @@ function LoginPage({ onLogin }) {
         setShowPassword(false)
         setMessage('Sikeres regisztráció. Most már bejelentkezhetsz.')
       } else {
-        onLogin()
+        onLogin(await response.json())
       }
     } catch {
       setMessage(

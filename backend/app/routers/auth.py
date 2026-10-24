@@ -37,14 +37,14 @@ def verify_password(password: str, stored_hash: str) -> bool:
 def login(credentials: LoginCredentials) -> dict[str, str]:
     with get_connection() as connection:
         user = connection.execute(
-            "SELECT username, password_hash FROM app_user WHERE username = %s",
+            "SELECT username, password_hash, role FROM app_user WHERE username = %s",
             (credentials.username,),
         ).fetchone()
 
     if not user or not verify_password(credentials.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Hibás felhasználónév vagy jelszó.")
 
-    return {"username": user["username"]}
+    return {"username": user["username"], "role": user["role"]}
 
 
 @router.post("/register", status_code=201)
