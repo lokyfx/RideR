@@ -3,7 +3,7 @@ import hmac
 import os
 import secrets
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import psycopg
 from fastapi import FastAPI, HTTPException
@@ -48,6 +48,7 @@ class LoginCredentials(BaseModel):
 class RegistrationCredentials(BaseModel):
     username: str
     password: str = Field(min_length=8)
+    role: Literal["rider", "restaurant"]
 
 
 def hash_password(password: str) -> str:
@@ -98,9 +99,9 @@ def register(credentials: RegistrationCredentials) -> dict[str, str]:
             connection.execute(
                 """
                 INSERT INTO app_user (username, password_hash, role)
-                VALUES (%s, %s, 'customer')
+                VALUES (%s, %s, %s)
                 """,
-                (credentials.username, hash_password(credentials.password)),
+                (credentials.username, hash_password(credentials.password), credentials.role),
             )
     except psycopg.errors.UniqueViolation as error:
         raise HTTPException(status_code=409, detail="Ez a felhasználónév már foglalt.") from error

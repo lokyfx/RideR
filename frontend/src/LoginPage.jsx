@@ -6,13 +6,15 @@ function LoginPage({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isRegistering, setIsRegistering] = useState(false)
+  const [registrationRole, setRegistrationRole] = useState('rider')
 
   async function handleSubmit(event) {
     event.preventDefault()
     setMessage('')
     setIsSubmitting(true)
 
-    const formData = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const formData = new FormData(form)
 
     try {
       const response = await fetch(isRegistering ? '/api/register' : '/api/login', {
@@ -21,6 +23,7 @@ function LoginPage({ onLogin }) {
         body: JSON.stringify({
           username: formData.get('username'),
           password: formData.get('password'),
+          ...(isRegistering ? { role: registrationRole } : {}),
         }),
       })
 
@@ -52,7 +55,15 @@ function LoginPage({ onLogin }) {
         return
       }
 
-      onLogin()
+      if (isRegistering) {
+        form.reset()
+        setIsRegistering(false)
+        setRegistrationRole('rider')
+        setShowPassword(false)
+        setMessage('Sikeres regisztráció. Most már bejelentkezhetsz.')
+      } else {
+        onLogin()
+      }
     } catch {
       setMessage(
         isRegistering
@@ -97,6 +108,29 @@ function LoginPage({ onLogin }) {
               {showPassword ? '◉' : '◎'}
             </button>
           </div>
+
+          {isRegistering && (
+            <div className="role-switch" role="group" aria-label="Regisztráció típusa">
+              <span
+                className={`role-slider ${registrationRole === 'restaurant' ? 'restaurant' : ''}`}
+                aria-hidden="true"
+              />
+              <button
+                className={registrationRole === 'rider' ? 'selected' : ''}
+                type="button"
+                onClick={() => setRegistrationRole('rider')}
+              >
+                Futár
+              </button>
+              <button
+                className={registrationRole === 'restaurant' ? 'selected' : ''}
+                type="button"
+                onClick={() => setRegistrationRole('restaurant')}
+              >
+                Étterem
+              </button>
+            </div>
+          )}
 
           <button type="submit" disabled={isSubmitting}>
             {isSubmitting
