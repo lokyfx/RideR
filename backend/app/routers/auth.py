@@ -5,7 +5,7 @@ import secrets
 import psycopg
 from fastapi import APIRouter, HTTPException
 
-from app.database import get_connection
+from app.database import RESTAURANT_ID, get_connection
 from app.schemas import LoginCredentials, RegistrationCredentials
 
 router = APIRouter(prefix="/api")
@@ -59,9 +59,22 @@ def register(credentials: RegistrationCredentials) -> dict[str, str]:
                 (credentials.username, hash_password(credentials.password), credentials.role),
             )
             if credentials.role == "restaurant":
-                connection.execute(
-                    "INSERT INTO restaurant (name, address) VALUES (%s, %s)",
+                restaurant_id = connection.execute(
+                    """
+                    INSERT INTO restaurant (name, address)
+                    VALUES (%s, %s)
+                    RETURNING restaurant_id
+                    """,
                     (credentials.username, ""),
+                ).fetchone()["restaurant_id"]
+                connection.execute(
+                    """
+                    INSERT INTO category (restaurant_id, name)
+                    SELECT %s, name
+                    FROM category
+                    WHERE restaurant_id = %s
+                    """,
+                    (restaurant_id, RESTAURANT_ID),
                 )
     except psycopg.errors.UniqueViolation as error:
         raise HTTPException(status_code=409, detail="Ez a felhasználónév már foglalt.") from error
