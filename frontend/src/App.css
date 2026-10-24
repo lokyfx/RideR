@@ -82,12 +82,69 @@ button {
 }
 
 .topbar-meta {
+	position: relative;
 	display: flex;
 	align-items: center;
 	gap: 9px;
 	color: var(--muted);
 	font-size: 13px;
 	font-weight: 700;
+}
+
+.status-select {
+	position: relative;
+}
+
+.status-button {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	padding: 8px 10px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: #fff;
+	color: var(--ink);
+	font: inherit;
+	cursor: pointer;
+}
+
+.status-button:hover {
+	border-color: var(--green);
+}
+
+.status-chevron {
+	color: var(--muted);
+	font-size: 16px;
+}
+
+.status-menu {
+	position: absolute;
+	z-index: 5;
+	top: calc(100% + 6px);
+	right: 0;
+	min-width: 170px;
+	padding: 5px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: 0 10px 24px rgba(31, 51, 39, 0.14);
+}
+
+.status-menu button {
+	display: block;
+	width: 100%;
+	padding: 9px 10px;
+	border: 0;
+	border-radius: 7px;
+	background: transparent;
+	color: var(--ink);
+	text-align: left;
+	cursor: pointer;
+}
+
+.status-menu button:hover {
+	background: #eef8f1;
+	color: var(--green);
 }
 
 .status-dot,

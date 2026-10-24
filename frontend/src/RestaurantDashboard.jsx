@@ -12,6 +12,8 @@ function RestaurantDashboard({ username }) {
   const [stock, setStock] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [status, setStatus] = useState('Nyitva')
+  const [showStatusMenu, setShowStatusMenu] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -77,7 +79,36 @@ function RestaurantDashboard({ username }) {
     <main className="dashboard-shell">
       <header className="topbar">
         <div className="brand-mark"><span>R</span>{restaurantName}</div>
-        <div className="topbar-meta"><span className="status-dot is-online" /> Nyitva <span className="avatar">RE</span></div>
+        <div className="topbar-meta">
+          <div className="status-select">
+            <button
+              className="status-button"
+              type="button"
+              onClick={() => setShowStatusMenu((open) => !open)}
+            >
+              <span className={`status-dot ${status === 'Nyitva' ? 'is-online' : ''}`} />
+              {status}
+              <span className="status-chevron">⌄</span>
+            </button>
+            {showStatusMenu && (
+              <div className="status-menu">
+                {['Nyitva', 'Zárva', 'Ideiglenesen zárva'].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      setStatus(option)
+                      setShowStatusMenu(false)
+                    }}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <span className="avatar">RE</span>
+        </div>
       </header>
 
       <section className="dashboard-content">
