@@ -79,7 +79,7 @@ function RestaurantDashboard({ username, onLogout }) {
   return (
     <main className="dashboard-shell">
       <header className="topbar">
-        <div className="brand-mark"><span>R</span>{restaurantName}</div>
+        <div className="brand-mark"><span>{restaurantName?.charAt(0).toUpperCase()}</span>{restaurantName}</div>
         <div className="topbar-meta">
           <div className="status-select">
             <button
