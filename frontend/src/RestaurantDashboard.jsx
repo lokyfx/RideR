@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createProduct, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
 
-function RestaurantDashboard({ username }) {
+function RestaurantDashboard({ username, onLogout }) {
   const [foods, setFoods] = useState([])
   const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
@@ -14,6 +14,7 @@ function RestaurantDashboard({ username }) {
   const [isLoading, setIsLoading] = useState(true)
   const [status, setStatus] = useState('Nyitva')
   const [showStatusMenu, setShowStatusMenu] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -107,7 +108,20 @@ function RestaurantDashboard({ username }) {
               </div>
             )}
           </div>
-          <span className="avatar">RE</span>
+          <div className="profile-select">
+            <button
+              className="avatar"
+              type="button"
+              onClick={() => setShowProfileMenu((open) => !open)}
+            >
+              RE
+            </button>
+            {showProfileMenu && (
+              <div className="profile-menu">
+                <button type="button" onClick={onLogout}>Log out</button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

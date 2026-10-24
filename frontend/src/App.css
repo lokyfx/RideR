@@ -172,6 +172,41 @@ button {
 	background: #e7d8c5;
 	color: #805e3a;
 	font-size: 11px;
+	border: 0;
+	cursor: pointer;
+}
+
+.profile-select {
+	position: relative;
+}
+
+.profile-menu {
+	position: absolute;
+	z-index: 5;
+	top: calc(100% + 6px);
+	right: 0;
+	min-width: 100px;
+	padding: 5px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: 0 10px 24px rgba(31, 51, 39, 0.14);
+}
+
+.profile-menu button {
+	width: 100%;
+	padding: 8px 10px;
+	border: 0;
+	border-radius: 7px;
+	background: transparent;
+	color: var(--ink);
+	text-align: left;
+	cursor: pointer;
+}
+
+.profile-menu button:hover {
+	background: #eef8f1;
+	color: var(--green);
 }
 
 .dashboard-content {

@@ -42,7 +42,7 @@ function UpdateMapCenter({ center }) {
   return null
 }
 
-function RiderDashboard() {
+function RiderDashboard({ onLogout }) {
   const [dashboard, setDashboard] = useState(null)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [error, setError] = useState('')
@@ -53,6 +53,7 @@ function RiderDashboard() {
       ? 'Locating you...'
       : 'Location is not supported by this browser'
   ))
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
 
   useEffect(() => {
     fetch('/api/dashboard')
@@ -136,7 +137,20 @@ function RiderDashboard() {
         <div className="topbar-meta">
           <span className={`status-dot ${rider.online ? 'is-online' : ''}`} />
           {rider.online ? 'On duty' : 'Offline'}
-          <span className="avatar">{rider.initials}</span>
+          <div className="profile-select">
+            <button
+              className="avatar"
+              type="button"
+              onClick={() => setShowProfileMenu((open) => !open)}
+            >
+              {rider.initials}
+            </button>
+            {showProfileMenu && (
+              <div className="profile-menu">
+                <button type="button" onClick={onLogout}>Log out</button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
