@@ -103,6 +103,11 @@ def register(credentials: RegistrationCredentials) -> dict[str, str]:
                 """,
                 (credentials.username, hash_password(credentials.password), credentials.role),
             )
+            if credentials.role == "restaurant":
+                connection.execute(
+                    "INSERT INTO restaurant (name, address) VALUES (%s, %s)",
+                    (credentials.username, ""),
+                )
     except psycopg.errors.UniqueViolation as error:
         raise HTTPException(status_code=409, detail="Ez a felhasználónév már foglalt.") from error
 
