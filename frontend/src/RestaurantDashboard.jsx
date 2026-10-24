@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createProduct, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
+import './restaurant-dashboard.css';
 
 function RestaurantDashboard({ username, onLogout }) {
   const [foods, setFoods] = useState([])
