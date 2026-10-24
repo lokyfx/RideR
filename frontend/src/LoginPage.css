@@ -72,6 +72,69 @@
 	color: #000;
 }
 
+.role-switch {
+	position: relative;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 2px;
+	padding: 3px;
+	margin-top: 8px;
+	border: 1px solid #dce7df;
+	border-radius: 12px;
+	background: #eef4ef;
+	box-shadow: inset 0 1px 3px rgba(31, 51, 39, 0.08);
+	overflow: hidden;
+}
+
+.role-slider {
+	position: absolute;
+	top: 3px;
+	bottom: 3px;
+	left: 3px;
+	width: calc(50% - 4px);
+	border-radius: 9px;
+	background: var(--green);
+	box-shadow: 0 3px 8px rgba(25, 101, 67, 0.22);
+	transition: transform 180ms ease;
+}
+
+.role-slider.restaurant {
+	transform: translateX(calc(100% + 2px));
+}
+
+.role-switch button {
+	position: relative;
+	z-index: 1;
+	padding: 9px;
+	margin: 0;
+	border: 0;
+	border-radius: 9px;
+	background: transparent;
+	color: #557064;
+	font: inherit;
+	font-weight: 700;
+	cursor: pointer;
+	transition: color 180ms ease, transform 180ms ease;
+}
+
+.role-switch button.selected {
+	color: #fff;
+}
+
+.role-switch button:hover {
+	color: var(--green);
+	transform: translateY(-1px);
+}
+
+.role-switch button.selected:hover {
+	color: #fff;
+}
+
+.role-switch button:focus-visible {
+	outline: 3px solid var(--mint);
+	outline-offset: -2px;
+}
+
 .login-form button {
 	padding: 12px;
 	margin-top: 14px;

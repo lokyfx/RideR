@@ -5,37 +5,71 @@ function LoginPage({ onLogin }) {
   const [message, setMessage] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isRegistering, setIsRegistering] = useState(false)
+  const [registrationRole, setRegistrationRole] = useState('rider')
 
   async function handleSubmit(event) {
     event.preventDefault()
     setMessage('')
     setIsSubmitting(true)
 
-    const formData = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const formData = new FormData(form)
 
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch(isRegistering ? '/api/register' : '/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: formData.get('username'),
           password: formData.get('password'),
+          ...(isRegistering ? { role: registrationRole } : {}),
         }),
       })
 
-      if (response.status === 401) {
+      if (response.status === 401 && !isRegistering) {
         setMessage('Hibás felhasználónév vagy jelszó.')
         return
       }
 
-      if (!response.ok) {
-        setMessage('A bejelentkezés nem sikerült. Próbáld újra később.')
+      if (response.status === 409 && isRegistering) {
+        setMessage('Ez a felhasználónév már foglalt.')
         return
       }
 
-      onLogin()
+      if (!response.ok) {
+        let errorMessage = isRegistering
+          ? 'A regisztráció nem sikerült. Próbáld újra később.'
+          : 'A bejelentkezés nem sikerült. Próbáld újra később.'
+
+        try {
+          const error = await response.json()
+          if (typeof error.detail === 'string') {
+            errorMessage = error.detail
+          }
+        } catch {
+          // Keep the generic message when the server does not return JSON.
+        }
+
+        setMessage(errorMessage)
+        return
+      }
+
+      if (isRegistering) {
+        form.reset()
+        setIsRegistering(false)
+        setRegistrationRole('rider')
+        setShowPassword(false)
+        setMessage('Sikeres regisztráció. Most már bejelentkezhetsz.')
+      } else {
+        onLogin()
+      }
     } catch {
-      setMessage('A bejelentkezési szolgáltatás nem érhető el.')
+      setMessage(
+        isRegistering
+          ? 'A regisztrációs szolgáltatás nem érhető el.'
+          : 'A bejelentkezési szolgáltatás nem érhető el.',
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -48,8 +82,8 @@ function LoginPage({ onLogin }) {
       </header>
 
       <section className="login-card">
-        <p className="eyebrow">Üdv újra</p>
-        <h1>Bejelentkezés</h1>
+        <p className="eyebrow">{isRegistering ? 'Csatlakozz hozzánk' : 'Üdv újra'}</p>
+        <h1>{isRegistering ? 'Regisztráció' : 'Bejelentkezés'}</h1>
         <form className="login-form" onSubmit={handleSubmit}>
           <label htmlFor="username">Felhasználónév</label>
           <input id="username" name="username" autoComplete="username" required />
@@ -60,7 +94,8 @@ function LoginPage({ onLogin }) {
               id="password"
               name="password"
               type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
+              autoComplete={isRegistering ? 'new-password' : 'current-password'}
+              minLength={isRegistering ? 8 : undefined}
               required
             />
             <button
@@ -74,19 +109,48 @@ function LoginPage({ onLogin }) {
             </button>
           </div>
 
+          {isRegistering && (
+            <div className="role-switch" role="group" aria-label="Regisztráció típusa">
+              <span
+                className={`role-slider ${registrationRole === 'restaurant' ? 'restaurant' : ''}`}
+                aria-hidden="true"
+              />
+              <button
+                className={registrationRole === 'rider' ? 'selected' : ''}
+                type="button"
+                onClick={() => setRegistrationRole('rider')}
+              >
+                Futár
+              </button>
+              <button
+                className={registrationRole === 'restaurant' ? 'selected' : ''}
+                type="button"
+                onClick={() => setRegistrationRole('restaurant')}
+              >
+                Étterem
+              </button>
+            </div>
+          )}
+
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Belépés…' : 'Belépés'}
+            {isSubmitting
+              ? (isRegistering ? 'Regisztráció…' : 'Belépés…')
+              : (isRegistering ? 'Regisztráció' : 'Belépés')}
           </button>
           {message && <p className="login-message" role="status">{message}</p>}
         </form>
         <p className="register-prompt">
-          Új vagy nálunk?{' '}
+          {isRegistering ? 'Már van fiókod?' : 'Új vagy nálunk?'}{' '}
           <button
             className="register-link"
             type="button"
-            onClick={() => setMessage('A regisztráció hamarosan elérhető.')}
+            onClick={() => {
+              setIsRegistering((registering) => !registering)
+              setMessage('')
+              setShowPassword(false)
+            }}
           >
-            Regisztráció
+            {isRegistering ? 'Bejelentkezés' : 'Regisztráció'}
           </button>
         </p>
       </section>
