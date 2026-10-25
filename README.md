@@ -53,7 +53,5 @@ A rendszer a rendelés feladásakor a következő paraméterek súlyozásával v
 
 <img width="1255" height="662" alt="QuickDBD-export" src="https://github.com/user-attachments/assets/a8c9f7bc-2a7d-4871-83c0-4291555ec1b2" />
 
-### Basic Structure - Lucidchart
-<img width="2160" height="1390" alt="image" src="https://github.com/user-attachments/assets/57f0367f-7241-4a28-a127-e4130ffbf19c" />
-
-Diagram from user perspective to do
+### Basic Structure - User Oriented
+<img width="815" height="591" alt="v3" src="https://github.com/user-attachments/assets/aa6800ff-e17b-4a8e-9698-319c73b58f2a" />
