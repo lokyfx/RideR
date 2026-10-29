@@ -152,6 +152,7 @@ h1 span {
 	display: inline-flex;
 	align-items: center;
 	gap: 10px;
+	line-height: 1;
 	padding: 8px 14px 8px 9px;
 	border: 1px solid var(--line);
 	border-radius: 20px;
@@ -169,21 +170,25 @@ h1 span {
 }
 
 .toggle-track {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	flex: 0 0 28px;
 	width: 28px;
 	height: 17px;
 	padding: 2px;
 	border-radius: 12px;
 	background: #bdc8c0;
-	text-align: left;
 }
 
 .duty-toggle.active .toggle-track {
 	background: var(--green);
-	text-align: right;
+	justify-content: flex-end;
 }
 
 .toggle-track span {
-	display: inline-block;
+	display: block;
+	flex: 0 0 13px;
 	width: 13px;
 	height: 13px;
 	border-radius: 50%;
