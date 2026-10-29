@@ -42,7 +42,7 @@ function UpdateMapCenter({ center }) {
   return null
 }
 
-function RiderDashboard() {
+function RiderDashboard({ username }) {
   const [dashboard, setDashboard] = useState(null)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [error, setError] = useState('')
@@ -55,7 +55,7 @@ function RiderDashboard() {
   ))
 
   useEffect(() => {
-    fetch('/api/dashboard')
+    fetch(`/api/dashboard?username=${encodeURIComponent(username)}`)
       .then((response) => {
         if (!response.ok) throw new Error('Dashboard could not be loaded')
         return response.json()
@@ -65,7 +65,7 @@ function RiderDashboard() {
         setSelectedOrder(data.rider.selected_order)
       })
       .catch(() => setError('The backend is not available. Start the Python API and try again.'))
-  }, [])
+  }, [username])
 
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -183,7 +183,7 @@ function RiderDashboard() {
             <UpdateMapCenter center={mapCenter} />
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {currentLocation && <Marker position={currentLocation} icon={riderIcon}><Popup>You are here</Popup></Marker>}
-            {orders.map((order) => <Marker key={order.id} position={order.position} icon={orderIcon}><Popup>{order.id} · {order.restaurant}</Popup></Marker>)}
+            {orders.filter((order) => order.position).map((order) => <Marker key={order.id} position={order.position} icon={orderIcon}><Popup>{order.id} · {order.restaurant}</Popup></Marker>)}
             <RecenterButton center={mapCenter} />
           </MapContainer>
           {locationError && <div className="map-location-error">{locationError}</div>}

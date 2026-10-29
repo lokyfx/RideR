@@ -78,7 +78,7 @@ function LoginPage({ onLogin }) {
   return (
     <main className="login-page">
       <header className="topbar">
-        <div className="brand-mark"><span>R</span>Restaurant</div>
+        <div className="brand-mark"><span>R</span>RideR</div>
       </header>
 
       <section className="login-card">

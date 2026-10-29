@@ -22,7 +22,7 @@
         "--port",
         "8000",
         "--env-file",
-        "../.env"
+        ".env"
       ],
       "cwd": "${workspaceFolder}/backend",
       "subProcess": true

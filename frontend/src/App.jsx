@@ -16,7 +16,7 @@ function App() {
           setView(loggedInUser.role === 'restaurant' ? 'restaurant' : 'rider')
         }} />
         : view === 'rider'
-          ? <RiderDashboard />
+          ? <RiderDashboard username={user?.username} />
           : <RestaurantDashboard username={user?.username} />}
     </>
   )
