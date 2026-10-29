@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { watchGps } from './gps.js'
 
 const riderIcon = L.divIcon({
   className: 'rider-pin',
@@ -48,11 +49,7 @@ function RiderDashboard({ username }) {
   const [error, setError] = useState('')
   const [connectionStatus, setConnectionStatus] = useState('')
   const [currentLocation, setCurrentLocation] = useState(null)
-  const [locationError, setLocationError] = useState(() => (
-    typeof navigator !== 'undefined' && navigator.geolocation
-      ? 'Locating you...'
-      : 'Location is not supported by this browser'
-  ))
+  const [locationError, setLocationError] = useState('Locating you...')
 
   useEffect(() => {
     fetch(`/api/dashboard?username=${encodeURIComponent(username)}`)
@@ -68,20 +65,12 @@ function RiderDashboard({ username }) {
   }, [username])
 
   useEffect(() => {
-    if (!navigator.geolocation) return
-
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setCurrentLocation([coords.latitude, coords.longitude])
+    return watchGps(
+      (location) => {
+        setCurrentLocation(location)
         setLocationError('')
       },
-      (geolocationError) => {
-        const message = geolocationError.code === geolocationError.PERMISSION_DENIED
-          ? 'Location permission denied'
-          : 'Could not get your location'
-        setLocationError(message)
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+      setLocationError,
     )
   }, [])
 
@@ -132,7 +121,7 @@ function RiderDashboard({ username }) {
   return (
     <main className="dashboard-shell">
       <header className="topbar">
-        <div className="brand-mark"><span>R</span>Riderboard</div>
+        <div className="brand-mark"><span>R</span>RideR</div>
         <div className="topbar-meta">
           <span className={`status-dot ${rider.online ? 'is-online' : ''}`} />
           {rider.online ? 'On duty' : 'Offline'}

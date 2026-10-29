@@ -62,7 +62,7 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
             "initials": name[:2].upper(),
             "online": rider_online,
             "date": "Today",
-            "stats": {"deliveries": deliveries["count"], "earned": deliveries["earned"], "rating": 0, "average_time": "-"},
+            "stats": {"deliveries": deliveries["count"], "earned": float(deliveries["earned"]), "rating": 0, "average_time": "-"},
             "selected_order": selected_order,
         },
         "orders": orders,
