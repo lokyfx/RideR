@@ -33,9 +33,14 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
              (rider["user_id"],),
          ).fetchall() if rider else []
         deliveries = connection.execute(
-            "SELECT COUNT(*) AS count FROM delivery WHERE rider_id = %s AND delivery_status = 'delivered'",
+            """
+            SELECT COUNT(*) AS count, COALESCE(SUM(o.total_amount), 0) AS earned
+            FROM delivery d
+            JOIN orders o ON o.order_id = d.order_id
+            WHERE d.rider_id = %s AND d.delivery_status = 'delivered'
+            """,
             (rider["user_id"],),
-        ).fetchone()["count"] if rider else 0
+        ).fetchone() if rider else {"count": 0, "earned": 0}
 
     orders = [
         {
@@ -57,7 +62,7 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
             "initials": name[:2].upper(),
             "online": rider_online,
             "date": "Today",
-            "stats": {"deliveries": deliveries, "earned": 0, "rating": 0, "average_time": "-"},
+            "stats": {"deliveries": deliveries["count"], "earned": deliveries["earned"], "rating": 0, "average_time": "-"},
             "selected_order": selected_order,
         },
         "orders": orders,
