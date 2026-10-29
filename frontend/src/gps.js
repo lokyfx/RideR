@@ -11,12 +11,19 @@ export function watchGps(onLocation, onError) {
   }
 
   const watchId = navigator.geolocation.watchPosition(
-    ({ coords }) => onLocation([coords.latitude, coords.longitude]),
-    (error) => onError(
-      error.code === error.PERMISSION_DENIED
-        ? 'Location permission denied'
-        : 'Could not get your location',
-    ),
+    ({ coords }) => {
+      if (coords.accuracy > 100) {
+        onError(`Low GPS accuracy: ${Math.round(coords.accuracy)}m`)
+        return
+      }
+
+      onLocation({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        accuracy: coords.accuracy,
+      })
+    },
+    onError,
     gpsOptions,
   )
 
