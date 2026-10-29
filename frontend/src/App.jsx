@@ -20,7 +20,7 @@ function App() {
           setView(loggedInUser.role === 'restaurant' ? 'restaurant' : 'rider')
         }} />
         : view === 'rider'
-          ? <RiderDashboard onLogout={logout} />
+          ? <RiderDashboard username={user?.username} onLogout={logout} />
           : <RestaurantDashboard username={user?.username} onLogout={logout} />}
     </>
   )

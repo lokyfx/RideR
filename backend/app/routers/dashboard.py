@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from app.database import get_connection
 from app.schemas import RiderStatus
@@ -11,27 +11,36 @@ selected_order = None
 
 
 @router.get("/dashboard")
-def get_dashboard() -> dict[str, Any]:
+def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
     global selected_order
 
     with get_connection() as connection:
         rider = connection.execute(
-            "SELECT user_id, username FROM app_user WHERE role = 'rider' ORDER BY user_id LIMIT 1",
+            "SELECT user_id, username FROM app_user WHERE username = %s AND role = 'rider'",
+            (username,),
         ).fetchone()
         rows = connection.execute(
             """
-            SELECT o.order_id, u.username AS customer, r.name AS restaurant,
-                   r.address, o.order_status
+             SELECT o.order_id, u.username AS customer, r.name AS restaurant,
+                 r.address, d.delivery_status
             FROM orders o
             JOIN app_user u ON u.user_id = o.customer_id
             JOIN restaurant r ON r.restaurant_id = o.restaurant_id
+             JOIN delivery d ON d.order_id = o.order_id
+             WHERE d.rider_id = %s
             ORDER BY o.order_id
             """,
-        ).fetchall()
+             (rider["user_id"],),
+         ).fetchall() if rider else []
         deliveries = connection.execute(
-            "SELECT COUNT(*) AS count FROM delivery WHERE rider_id = %s AND delivery_status = 'delivered'",
+            """
+            SELECT COUNT(*) AS count, COALESCE(SUM(o.total_amount), 0) AS earned
+            FROM delivery d
+            JOIN orders o ON o.order_id = d.order_id
+            WHERE d.rider_id = %s AND d.delivery_status = 'delivered'
+            """,
             (rider["user_id"],),
-        ).fetchone()["count"] if rider else 0
+        ).fetchone() if rider else {"count": 0, "earned": 0}
 
     orders = [
         {
@@ -39,8 +48,7 @@ def get_dashboard() -> dict[str, Any]:
             "customer": row["customer"],
             "restaurant": row["restaurant"],
             "address": row["address"],
-            "status": row["order_status"].replace("_", " ").title(),
-            "position": [46.523665071133486, 24.599028238137638],
+            "status": row["delivery_status"].replace("_", " ").title(),
         }
         for row in rows
     ]
@@ -54,7 +62,7 @@ def get_dashboard() -> dict[str, Any]:
             "initials": name[:2].upper(),
             "online": rider_online,
             "date": "Today",
-            "stats": {"deliveries": deliveries, "earned": 0, "rating": 0, "average_time": "-"},
+            "stats": {"deliveries": deliveries["count"], "earned": float(deliveries["earned"]), "rating": 0, "average_time": "-"},
             "selected_order": selected_order,
         },
         "orders": orders,

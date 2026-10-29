@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { watchGps } from './gps.js'
 
 const riderIcon = L.divIcon({
   className: 'rider-pin',
@@ -42,7 +43,7 @@ function UpdateMapCenter({ center }) {
   return null
 }
 
-function RiderDashboard({ onLogout }) {
+function RiderDashboard({ username, onLogout }) {
   const [dashboard, setDashboard] = useState(null)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [error, setError] = useState('')
@@ -56,7 +57,7 @@ function RiderDashboard({ onLogout }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
 
   useEffect(() => {
-    fetch('/api/dashboard')
+    fetch(`/api/dashboard?username=${encodeURIComponent(username)}`)
       .then((response) => {
         if (!response.ok) throw new Error('Dashboard could not be loaded')
         return response.json()
@@ -66,23 +67,15 @@ function RiderDashboard({ onLogout }) {
         setSelectedOrder(data.rider.selected_order)
       })
       .catch(() => setError('The backend is not available. Start the Python API and try again.'))
-  }, [])
+  }, [username])
 
   useEffect(() => {
-    if (!navigator.geolocation) return
-
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setCurrentLocation([coords.latitude, coords.longitude])
+    return watchGps(
+      (location) => {
+        setCurrentLocation([location.latitude, location.longitude])
         setLocationError('')
       },
-      (geolocationError) => {
-        const message = geolocationError.code === geolocationError.PERMISSION_DENIED
-          ? 'Location permission denied'
-          : 'Could not get your location'
-        setLocationError(message)
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+      setLocationError,
     )
   }, [])
 
@@ -133,7 +126,7 @@ function RiderDashboard({ onLogout }) {
   return (
     <main className="dashboard-shell">
       <header className="topbar">
-        <div className="brand-mark"><span>R</span>Riderboard</div>
+        <div className="brand-mark"><span>R</span>RideR</div>
         <div className="topbar-meta">
           <span className={`status-dot ${rider.online ? 'is-online' : ''}`} />
           {rider.online ? 'On duty' : 'Offline'}
@@ -197,7 +190,7 @@ function RiderDashboard({ onLogout }) {
             <UpdateMapCenter center={mapCenter} />
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {currentLocation && <Marker position={currentLocation} icon={riderIcon}><Popup>You are here</Popup></Marker>}
-            {orders.map((order) => <Marker key={order.id} position={order.position} icon={orderIcon}><Popup>{order.id} · {order.restaurant}</Popup></Marker>)}
+            {orders.filter((order) => order.position).map((order) => <Marker key={order.id} position={order.position} icon={orderIcon}><Popup>{order.id} · {order.restaurant}</Popup></Marker>)}
             <RecenterButton center={mapCenter} />
           </MapContainer>
           {locationError && <div className="map-location-error">{locationError}</div>}
