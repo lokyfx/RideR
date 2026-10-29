@@ -67,7 +67,7 @@ function RiderDashboard({ username }) {
   useEffect(() => {
     return watchGps(
       (location) => {
-        setCurrentLocation(location)
+        setCurrentLocation([location.latitude, location.longitude])
         setLocationError('')
       },
       setLocationError,
