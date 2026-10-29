@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { createProduct, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
+import './restaurant-dashboard.css';
 
-function RestaurantDashboard({ username }) {
+function RestaurantDashboard({ username, onLogout }) {
   const [foods, setFoods] = useState([])
   const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
@@ -12,6 +13,9 @@ function RestaurantDashboard({ username }) {
   const [stock, setStock] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [status, setStatus] = useState('Nyitva')
+  const [showStatusMenu, setShowStatusMenu] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -76,8 +80,50 @@ function RestaurantDashboard({ username }) {
   return (
     <main className="dashboard-shell">
       <header className="topbar">
-        <div className="brand-mark"><span>R</span>{restaurantName}</div>
-        <div className="topbar-meta"><span className="status-dot is-online" /> Nyitva <span className="avatar">RE</span></div>
+        <div className="brand-mark"><span>{restaurantName?.charAt(0).toUpperCase()}</span>{restaurantName}</div>
+        <div className="topbar-meta">
+          <div className="status-select">
+            <button
+              className="status-button"
+              type="button"
+              onClick={() => setShowStatusMenu((open) => !open)}
+            >
+              <span className={`status-dot ${status === 'Nyitva' ? 'is-online' : ''}`} />
+              {status}
+              <span className="status-chevron">⌄</span>
+            </button>
+            {showStatusMenu && (
+              <div className="status-menu">
+                {['Nyitva', 'Zárva', 'Ideiglenesen zárva'].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      setStatus(option)
+                      setShowStatusMenu(false)
+                    }}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="profile-select">
+            <button
+              className="avatar"
+              type="button"
+              onClick={() => setShowProfileMenu((open) => !open)}
+            >
+              RE
+            </button>
+            {showProfileMenu && (
+              <div className="profile-menu">
+                <button type="button" onClick={onLogout}>Log out</button>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       <section className="dashboard-content">

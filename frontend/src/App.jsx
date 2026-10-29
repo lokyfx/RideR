@@ -7,6 +7,10 @@ import './App.css'
 function App() {
   const [view, setView] = useState('login')
   const [user, setUser] = useState(null)
+  const logout = () => {
+    setUser(null)
+    setView('login')
+  }
 
   return (
     <>
@@ -16,8 +20,8 @@ function App() {
           setView(loggedInUser.role === 'restaurant' ? 'restaurant' : 'rider')
         }} />
         : view === 'rider'
-          ? <RiderDashboard />
-          : <RestaurantDashboard username={user?.username} />}
+          ? <RiderDashboard onLogout={logout} />
+          : <RestaurantDashboard username={user?.username} onLogout={logout} />}
     </>
   )
 }
