@@ -175,6 +175,11 @@ function RestaurantDashboard({ username, onLogout }) {
           )}
         </section>
       </section>
+      {order.length > 0 && (
+        <button className="find-rider-button" type="button">
+          Find Rider
+        </button>
+      )}
     </main>
   )
 }

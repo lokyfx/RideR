@@ -499,6 +499,30 @@ h2 {
 	cursor: pointer;
 }
 
+.find-rider-button {
+	position: fixed;
+	z-index: 1100;
+	right: 24px;
+	bottom: 24px;
+	padding: 14px 22px;
+	border: 0;
+	border-radius: 12px;
+	background: var(--green);
+	color: #fff;
+	box-shadow: 0 6px 20px rgba(31, 51, 39, 0.2);
+	font-weight: 800;
+	cursor: pointer;
+}
+
+.find-rider-button:hover {
+	background: #17613f;
+}
+
+.find-rider-button:focus-visible {
+	outline: 3px solid #bce4cc;
+	outline-offset: 3px;
+}
+
 .rider-pin span {
 	display: grid;
 	place-items: center;
@@ -557,5 +581,10 @@ h2 {
 	.map-control {
 		top: 14px;
 		right: 14px;
+	}
+
+	.find-rider-button {
+		right: 16px;
+		bottom: 16px;
 	}
 }
