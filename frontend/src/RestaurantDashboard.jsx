@@ -8,6 +8,7 @@ function RestaurantDashboard({ username, onLogout }) {
   const [restaurantName, setRestaurantName] = useState('Restaurant')
   const [order, setOrder] = useState([])
   const [carRequired, setCarRequired] = useState(false)
+  const [deliveryAddress, setDeliveryAddress] = useState('')
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -173,6 +174,16 @@ function RestaurantDashboard({ username, onLogout }) {
           </div>
           {order.length === 0 ? <p style={{ color: 'var(--muted)' }}>Válassz ételt az étlapról.</p> : (
             <div className="order-list">
+              <label className="delivery-address-field">
+                <span>Szállítási cím</span>
+                <input
+                  type="text"
+                  autoComplete="street-address"
+                  value={deliveryAddress}
+                  onChange={(event) => setDeliveryAddress(event.target.value)}
+                  placeholder="Add meg a szállítási címet"
+                />
+              </label>
               {order.map((food) => (
                 <div className="order-card" key={food.id}>
                   <span className="order-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span>

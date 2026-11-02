@@ -114,6 +114,37 @@
   outline-offset: 2px;
 }
 
+.delivery-address-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.delivery-address-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1.5px solid var(--rd-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--rd-text-main);
+  font: inherit;
+  font-weight: 500;
+}
+
+.delivery-address-field input::placeholder {
+  color: var(--rd-text-placeholder);
+  font-weight: 400;
+}
+
+.delivery-address-field input:focus {
+  border-color: var(--rd-border-focus);
+  outline: 3px solid var(--rd-primary-light);
+}
+
 @media (max-width: 520px) {
   .order-heading-row {
     flex-wrap: wrap;
