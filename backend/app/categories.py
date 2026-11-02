@@ -3,7 +3,7 @@ from psycopg import Connection
 
 DEFAULT_CATEGORIES = ("Előételek", "Főételek", "Desszertek", "Italok")
 
-
+# dsd
 def ensure_restaurant_categories(
     connection: Connection, restaurant_id: int
 ) -> None:
