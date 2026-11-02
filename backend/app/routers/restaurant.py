@@ -2,6 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.categories import ensure_restaurant_categories
 from app.database import get_connection
 from app.schemas import ProductCreate
 
@@ -52,6 +53,7 @@ def get_products(username: str = Query(...)) -> list[dict[str, Any]]:
 def get_categories(username: str = Query(...)) -> list[dict[str, Any]]:
     restaurant_id = get_restaurant_id(username)
     with get_connection() as connection:
+        ensure_restaurant_categories(connection, restaurant_id)
         return connection.execute(
             """
             SELECT category_id AS id, name

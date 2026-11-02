@@ -5,6 +5,7 @@ import secrets
 import psycopg
 from fastapi import APIRouter, HTTPException
 
+from app.categories import ensure_restaurant_categories
 from app.database import RESTAURANT_ID, get_connection
 from app.schemas import LoginCredentials, RegistrationCredentials
 
@@ -76,6 +77,7 @@ def register(credentials: RegistrationCredentials) -> dict[str, str]:
                     """,
                     (restaurant_id, RESTAURANT_ID),
                 )
+                ensure_restaurant_categories(connection, restaurant_id)
     except psycopg.errors.UniqueViolation as error:
         raise HTTPException(status_code=409, detail="Ez a felhasználónév már foglalt.") from error
 

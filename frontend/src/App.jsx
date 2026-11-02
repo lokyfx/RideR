@@ -17,7 +17,7 @@ function App() {
       {view === 'login'
         ? <LoginPage onLogin={(loggedInUser) => {
           setUser(loggedInUser)
-          setView(loggedInUser.role === 'restaurant' ? 'restaurant' : 'rider')
+          setView(loggedInUser.role === 'rider' ? 'rider' : 'restaurant')
         }} />
         : view === 'rider'
           ? <RiderDashboard username={user?.username} onLogout={logout} />
