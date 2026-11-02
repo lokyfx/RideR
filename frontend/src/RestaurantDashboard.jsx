@@ -7,6 +7,7 @@ function RestaurantDashboard({ username, onLogout }) {
   const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
   const [order, setOrder] = useState([])
+  const [deliveryVehicle, setDeliveryVehicle] = useState('scooter_bicycle')
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -171,6 +172,29 @@ function RestaurantDashboard({ username, onLogout }) {
                 </div>
               ))}
               <div className="orders-heading" style={{ marginTop: 12 }}><h2>Összesen</h2><strong>{total.toFixed(2)} €</strong></div>
+              <fieldset className="delivery-vehicle-selector">
+                <legend>Szállításhoz szükséges jármű</legend>
+                <div className="delivery-vehicle-options">
+                  {[
+                    { value: 'scooter_bicycle', label: 'Robogó / kerékpár' },
+                    { value: 'car', label: 'Autó' },
+                  ].map((vehicle) => (
+                    <label
+                      className={`delivery-vehicle-option ${deliveryVehicle === vehicle.value ? 'selected' : ''}`}
+                      key={vehicle.value}
+                    >
+                      <input
+                        type="radio"
+                        name="delivery-vehicle"
+                        value={vehicle.value}
+                        checked={deliveryVehicle === vehicle.value}
+                        onChange={() => setDeliveryVehicle(vehicle.value)}
+                      />
+                      <span>{vehicle.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
             </div>
           )}
         </section>
