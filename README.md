@@ -55,3 +55,5 @@ A rendszer a rendelés feladásakor a következő paraméterek súlyozásával v
 
 ### Basic Structure - User Oriented
 <img width="815" height="591" alt="v3" src="https://github.com/user-attachments/assets/aa6800ff-e17b-4a8e-9698-319c73b58f2a" />
+
+UML diagram
