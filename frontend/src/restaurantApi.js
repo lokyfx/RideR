@@ -29,3 +29,16 @@ export async function createProduct(product, username) {
   if (!response.ok) throw new Error('Product could not be created')
   return response.json()
 }
+
+export async function createOrder(order, username) {
+  const response = await fetch(endpoint('/api/restaurant/orders', username), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(order),
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || 'Order could not be sent')
+  }
+  return data
+}

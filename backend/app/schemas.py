@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from pydantic import Field
+from pydantic import Field, field_validator
 from typing import Literal
 
 
@@ -24,3 +24,22 @@ class ProductCreate(BaseModel):
     price: float
     category_id: int
     stock: int
+
+
+class OrderItemCreate(BaseModel):
+    product_id: int = Field(gt=0)
+    quantity: int = Field(gt=0)
+
+
+class RestaurantOrderCreate(BaseModel):
+    delivery_address: str = Field(min_length=1, max_length=500)
+    car_required: bool = False
+    items: list[OrderItemCreate] = Field(min_length=1)
+
+    @field_validator("delivery_address")
+    @classmethod
+    def validate_delivery_address(cls, value: str) -> str:
+        address = value.strip()
+        if not address:
+            raise ValueError("Delivery address cannot be empty.")
+        return address

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createProduct, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
+import { createOrder, createProduct, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
 import './restaurant-dashboard.css';
 
 function RestaurantDashboard({ username, onLogout }) {
@@ -14,6 +14,9 @@ function RestaurantDashboard({ username, onLogout }) {
   const [categoryId, setCategoryId] = useState('')
   const [stock, setStock] = useState('')
   const [error, setError] = useState('')
+  const [orderSubmissionError, setOrderSubmissionError] = useState('')
+  const [orderSubmissionStatus, setOrderSubmissionStatus] = useState('')
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [status, setStatus] = useState('Nyitva')
   const [showStatusMenu, setShowStatusMenu] = useState(false)
@@ -56,6 +59,8 @@ function RestaurantDashboard({ username, onLogout }) {
   }
 
   function addToOrder(food) {
+    setOrderSubmissionError('')
+    setOrderSubmissionStatus('')
     setOrder((current) => {
       const existingFood = current.find((item) => item.id === food.id)
 
@@ -75,6 +80,38 @@ function RestaurantDashboard({ username, onLogout }) {
         ? { ...item, quantity: (item.quantity || 1) + change }
         : item)
       .filter((item) => item.quantity > 0))
+  }
+
+  async function sendOrderToRiders() {
+    if (isSubmittingOrder) return
+    if (!deliveryAddress.trim()) {
+      setOrderSubmissionError('A futár keresése előtt add meg a szállítási címet.')
+      setOrderSubmissionStatus('')
+      return
+    }
+
+    setIsSubmittingOrder(true)
+    setOrderSubmissionError('')
+    setOrderSubmissionStatus('')
+
+    try {
+      const createdOrder = await createOrder({
+        delivery_address: deliveryAddress.trim(),
+        car_required: carRequired,
+        items: order.map((food) => ({
+          product_id: food.id,
+          quantity: food.quantity,
+        })),
+      }, username)
+      setOrder([])
+      setDeliveryAddress('')
+      setCarRequired(false)
+      setOrderSubmissionStatus(`A rendelés elküldve a futároknak (#${createdOrder.order_id}).`)
+    } catch (requestError) {
+      setOrderSubmissionError(requestError.message || 'A rendelés elküldése nem sikerült.')
+    } finally {
+      setIsSubmittingOrder(false)
+    }
   }
 
   const total = order.reduce((sum, food) => sum + Number(food.price) * (food.quantity || 1), 0)
@@ -200,9 +237,20 @@ function RestaurantDashboard({ username, onLogout }) {
         </section>
       </section>
       {order.length > 0 && (
-        <button className="find-rider-button" type="button">
-          Find Rider
-        </button>
+        <>
+          {orderSubmissionError && <p className="order-submission-message error" role="alert">{orderSubmissionError}</p>}
+          <button
+            className="find-rider-button"
+            type="button"
+            onClick={sendOrderToRiders}
+            disabled={isSubmittingOrder}
+          >
+            {isSubmittingOrder ? 'Küldés...' : 'Find Rider'}
+          </button>
+        </>
+      )}
+      {order.length === 0 && orderSubmissionStatus && (
+        <p className="order-submission-message success" role="status">{orderSubmissionStatus}</p>
       )}
     </main>
   )

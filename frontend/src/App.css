@@ -523,6 +523,89 @@ h2 {
 	outline-offset: 3px;
 }
 
+.find-rider-button:disabled {
+	background: #738078;
+	cursor: wait;
+}
+
+.order-submission-message {
+	position: fixed;
+	z-index: 1100;
+	right: 24px;
+	bottom: 82px;
+	max-width: min(440px, calc(100vw - 48px));
+	padding: 10px 14px;
+	border: 1px solid var(--line);
+	border-radius: 9px;
+	background: #fff;
+	box-shadow: 0 4px 16px rgba(31, 51, 39, 0.12);
+	font-size: 13px;
+}
+
+.order-submission-message.error {
+	border-color: #f0d5c9;
+	color: #a45d45;
+}
+
+.order-submission-message.success {
+	border-color: #bce4cc;
+	color: var(--green);
+}
+
+.rider-order-card {
+	flex-wrap: wrap;
+	cursor: default;
+}
+
+.rider-order-details {
+	display: flex;
+	align-items: center;
+	flex: 1 1 100%;
+	gap: 10px;
+	min-width: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.rider-order-actions {
+	display: flex;
+	gap: 7px;
+	width: 100%;
+	padding-left: 38px;
+}
+
+.rider-order-actions button {
+	flex: 1;
+	padding: 8px 10px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: #fff;
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.rider-order-actions .accept-order-button {
+	border-color: var(--green);
+	background: var(--green);
+	color: #fff;
+}
+
+.rider-order-actions button:disabled {
+	opacity: 0.6;
+	cursor: wait;
+}
+
+.rider-order-car {
+	color: var(--muted);
+	font-size: 10px;
+}
+
 .rider-pin span {
 	display: grid;
 	place-items: center;
