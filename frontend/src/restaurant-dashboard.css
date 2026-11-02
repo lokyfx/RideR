@@ -74,63 +74,50 @@
   color: var(--green);
 }
 
-.delivery-vehicle-selector {
-  display: grid;
-  gap: 10px;
-  padding: 0;
-  margin: 18px 0 0;
-  border: 0;
+.order-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-.delivery-vehicle-selector legend {
-  margin-bottom: 10px;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.delivery-vehicle-options {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.delivery-vehicle-option {
-  position: relative;
-  display: grid;
-  min-height: 48px;
-  place-items: center;
-  padding: 10px;
+.car-required-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #fff;
   color: var(--ink);
   font-size: 13px;
   font-weight: 600;
-  text-align: center;
   cursor: pointer;
-  transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease;
+  transition: border-color 180ms ease, background-color 180ms ease;
 }
 
-.delivery-vehicle-option input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  clip-path: inset(50%);
-}
-
-.delivery-vehicle-option.selected {
+.car-required-toggle.is-checked {
   border-color: var(--green);
   background: #eef8f1;
-  color: var(--green);
 }
 
-.delivery-vehicle-option:focus-within {
+.car-required-toggle input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--green);
+}
+
+.car-required-toggle:focus-within {
   outline: 3px solid rgba(31, 122, 82, 0.25);
   outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .order-heading-row {
+    flex-wrap: wrap;
+  }
 }
 
 /* Teljes szélességű kártya konténer, a mezők vertikálisan követik egymást */

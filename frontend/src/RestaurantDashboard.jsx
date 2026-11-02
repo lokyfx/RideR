@@ -7,7 +7,7 @@ function RestaurantDashboard({ username, onLogout }) {
   const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
   const [order, setOrder] = useState([])
-  const [deliveryVehicle, setDeliveryVehicle] = useState('scooter_bicycle')
+  const [carRequired, setCarRequired] = useState(false)
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -158,7 +158,19 @@ function RestaurantDashboard({ username, onLogout }) {
 
         <section className="map-panel" style={{ padding: '54px 5vw', background: 'var(--paper)' }}>
           <p className="eyebrow">Aktuális rendelés</p>
-          <h2 style={{ fontSize: 28, marginBottom: 24 }}>Rendelés #{order.length ? '001' : '---'}</h2>
+          <div className="order-heading-row">
+            <h2 style={{ fontSize: 28, marginBottom: 24 }}>Rendelés #{order.length ? '001' : '---'}</h2>
+            {order.length > 0 && (
+              <label className={`car-required-toggle ${carRequired ? 'is-checked' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={carRequired}
+                  onChange={(event) => setCarRequired(event.target.checked)}
+                />
+                <span>Autó szükséges</span>
+              </label>
+            )}
+          </div>
           {order.length === 0 ? <p style={{ color: 'var(--muted)' }}>Válassz ételt az étlapról.</p> : (
             <div className="order-list">
               {order.map((food) => (
@@ -172,29 +184,6 @@ function RestaurantDashboard({ username, onLogout }) {
                 </div>
               ))}
               <div className="orders-heading" style={{ marginTop: 12 }}><h2>Összesen</h2><strong>{total.toFixed(2)} €</strong></div>
-              <fieldset className="delivery-vehicle-selector">
-                <legend>Szállításhoz szükséges jármű</legend>
-                <div className="delivery-vehicle-options">
-                  {[
-                    { value: 'scooter_bicycle', label: 'Robogó / kerékpár' },
-                    { value: 'car', label: 'Autó' },
-                  ].map((vehicle) => (
-                    <label
-                      className={`delivery-vehicle-option ${deliveryVehicle === vehicle.value ? 'selected' : ''}`}
-                      key={vehicle.value}
-                    >
-                      <input
-                        type="radio"
-                        name="delivery-vehicle"
-                        value={vehicle.value}
-                        checked={deliveryVehicle === vehicle.value}
-                        onChange={() => setDeliveryVehicle(vehicle.value)}
-                      />
-                      <span>{vehicle.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
             </div>
           )}
         </section>
