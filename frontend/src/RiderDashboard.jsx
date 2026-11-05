@@ -200,7 +200,9 @@ function RiderDashboard({ username, onLogout }) {
           <div className="orders-heading"><h2>Orders &amp; offers</h2><span>{orders.length}</span></div>
           {orderActionError && <p className="login-message" role="alert">{orderActionError}</p>}
           <div className="order-list">
-            {orders.map((order) => (
+            {orders.length === 0
+              ? <p className="rider-empty-orders">No active orders or offers.</p>
+              : orders.map((order) => (
               <div
                 className={`order-card rider-order-card ${selectedOrder === order.id ? 'selected' : ''}`}
                 key={order.id}

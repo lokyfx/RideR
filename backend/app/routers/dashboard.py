@@ -32,18 +32,21 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
             JOIN orders o ON o.order_id = d.order_id
             JOIN restaurant r ON r.restaurant_id = o.restaurant_id
             LEFT JOIN app_user customer ON customer.user_id = o.customer_id
-            WHERE d.rider_id = %s
-               OR (
-                   %s IS TRUE
-                   AND d.rider_id IS NULL
-                   AND d.delivery_status = 'waiting'
-                   AND NOT EXISTS (
-                       SELECT 1
-                       FROM delivery_rejection rejection
-                       WHERE rejection.order_id = d.order_id
-                         AND rejection.rider_id = %s
+            WHERE NULLIF(BTRIM(d.delivery_address), '') IS NOT NULL
+              AND (
+                  d.rider_id = %s
+                  OR (
+                      %s IS TRUE
+                      AND d.rider_id IS NULL
+                      AND d.delivery_status = 'waiting'
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM delivery_rejection rejection
+                          WHERE rejection.order_id = d.order_id
+                            AND rejection.rider_id = %s
+                      )
                    )
-               )
+              )
             ORDER BY is_offer DESC, o.order_id DESC
             """,
             (rider["user_id"], rider["is_online"], rider["user_id"]),

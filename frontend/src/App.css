@@ -557,6 +557,11 @@ h2 {
 	cursor: default;
 }
 
+.rider-empty-orders {
+	color: var(--muted);
+	font-size: 13px;
+}
+
 .rider-order-details {
 	display: flex;
 	align-items: center;
