@@ -145,6 +145,67 @@
   outline: 3px solid var(--rd-primary-light);
 }
 
+.restaurant-orders-panel {
+  padding: 28px 5vw;
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+
+.restaurant-orders-panel > .orders-heading {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.restaurant-orders-panel > .orders-heading h2 {
+  font-size: 18px;
+}
+
+.restaurant-orders-empty {
+  color: var(--muted);
+}
+
+.restaurant-orders-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.restaurant-order-card {
+  display: grid;
+  gap: 9px;
+  padding: 16px;
+  border: 1px solid var(--rd-border);
+  border-radius: 12px;
+  background: var(--rd-bg-surface);
+}
+
+.restaurant-order-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.restaurant-order-status {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #fff5dd;
+  color: #8a5a00;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.restaurant-order-status.status-accepted,
+.restaurant-order-status.status-delivering {
+  background: #eef8f1;
+  color: var(--green);
+}
+
+.restaurant-order-card small {
+  color: var(--muted);
+}
+
 @media (max-width: 520px) {
   .order-heading-row {
     flex-wrap: wrap;

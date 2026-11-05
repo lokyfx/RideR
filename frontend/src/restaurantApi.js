@@ -20,6 +20,12 @@ export async function getCategories(username) {
   return response.json()
 }
 
+export async function getRestaurantOrders(username) {
+  const response = await fetch(endpoint('/api/restaurant/orders', username))
+  if (!response.ok) throw new Error('Orders could not be loaded')
+  return response.json()
+}
+
 export async function createProduct(product, username) {
   const response = await fetch(endpoint('/api/restaurant/products', username), {
     method: 'POST',

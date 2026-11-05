@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { createOrder, createProduct, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
+import { createOrder, createProduct, getCategories, getProducts, getRestaurantName, getRestaurantOrders } from './restaurantApi.js'
 import './restaurant-dashboard.css';
 
 function RestaurantDashboard({ username, onLogout }) {
   const [foods, setFoods] = useState([])
   const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
+  const [restaurantOrders, setRestaurantOrders] = useState([])
+  const [restaurantOrdersError, setRestaurantOrdersError] = useState('')
   const [order, setOrder] = useState([])
   const [carRequired, setCarRequired] = useState(false)
   const [deliveryAddress, setDeliveryAddress] = useState('')
@@ -36,6 +38,29 @@ function RestaurantDashboard({ username, onLogout }) {
       })
       .catch(() => setError('Az ételek nem tölthetők be.'))
       .finally(() => setIsLoading(false))
+  }, [username])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function refreshRestaurantOrders() {
+      try {
+        const orders = await getRestaurantOrders(username)
+        if (isMounted) {
+          setRestaurantOrders(orders)
+          setRestaurantOrdersError('')
+        }
+      } catch {
+        if (isMounted) setRestaurantOrdersError('A rendelések nem tölthetők be.')
+      }
+    }
+
+    refreshRestaurantOrders()
+    const intervalId = window.setInterval(refreshRestaurantOrders, 3000)
+    return () => {
+      isMounted = false
+      window.clearInterval(intervalId)
+    }
   }, [username])
 
   async function addFood(event) {
@@ -261,6 +286,38 @@ function RestaurantDashboard({ username, onLogout }) {
             </div>
           )}
         </section>
+      </section>
+      <section className="restaurant-orders-panel" aria-live="polite">
+        <div className="orders-heading">
+          <h2>Aktív rendelések</h2>
+          <span>{restaurantOrders.length}</span>
+        </div>
+        {restaurantOrdersError
+          ? <p className="login-message" role="alert">{restaurantOrdersError}</p>
+          : restaurantOrders.length === 0
+            ? <p className="restaurant-orders-empty">Jelenleg nincs aktív rendelés.</p>
+            : (
+              <div className="restaurant-orders-list">
+                {restaurantOrders.map((restaurantOrder) => (
+                  <article className="restaurant-order-card" key={restaurantOrder.order_id}>
+                    <div className="restaurant-order-heading">
+                      <strong>Rendelés #{restaurantOrder.order_id}</strong>
+                      <span className={`restaurant-order-status status-${restaurantOrder.status}`}>
+                        {restaurantOrder.status === 'waiting'
+                          ? 'Futár keresése folyamatban'
+                          : restaurantOrder.status === 'accepted'
+                            ? 'Futár elfogadta'
+                            : 'Futár úton van'}
+                      </span>
+                    </div>
+                    <small>{restaurantOrder.delivery_address}</small>
+                    {restaurantOrder.rider_name && (
+                      <small>Futár: {restaurantOrder.rider_name}</small>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
       </section>
       {order.length > 0 && (
         <>

@@ -66,6 +66,26 @@ def get_categories(username: str = Query(...)) -> list[dict[str, Any]]:
         ).fetchall()
 
 
+@router.get("/orders")
+def get_restaurant_orders(username: str = Query(...)) -> list[dict[str, Any]]:
+    restaurant_id = get_restaurant_id(username)
+    with get_connection() as connection:
+        return connection.execute(
+            """
+            SELECT o.order_id, d.delivery_status AS status, d.delivery_address,
+                   rider.username AS rider_name
+            FROM orders o
+            JOIN delivery d ON d.order_id = o.order_id
+            LEFT JOIN app_user rider ON rider.user_id = d.rider_id
+            WHERE o.restaurant_id = %s
+              AND d.delivery_status IN ('waiting', 'accepted', 'delivering')
+              AND NULLIF(BTRIM(d.delivery_address), '') IS NOT NULL
+            ORDER BY o.created_at DESC, o.order_id DESC
+            """,
+            (restaurant_id,),
+        ).fetchall()
+
+
 @router.post("/products", status_code=201)
 def create_product(product: ProductCreate, username: str = Query(...)) -> dict[str, Any]:
     if product.price < 0:
