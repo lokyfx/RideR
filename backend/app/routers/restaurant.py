@@ -135,10 +135,12 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
 
         connection.execute(
             """
-            INSERT INTO delivery (order_id, rider_id, delivery_status, delivery_address)
-            VALUES (%s, NULL, 'waiting', %s)
+            INSERT INTO delivery (
+                order_id, rider_id, delivery_status, delivery_address, customer_phone
+            )
+            VALUES (%s, NULL, 'waiting', %s, %s)
             """,
-            (order_id, order.delivery_address),
+            (order_id, order.delivery_address, order.customer_phone),
         )
 
     return {"order_id": order_id, "status": "waiting"}

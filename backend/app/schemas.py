@@ -1,3 +1,5 @@
+import re
+
 from pydantic import BaseModel
 from pydantic import Field, field_validator
 from typing import Literal
@@ -33,6 +35,7 @@ class OrderItemCreate(BaseModel):
 
 class RestaurantOrderCreate(BaseModel):
     delivery_address: str = Field(min_length=1, max_length=500)
+    customer_phone: str = Field(min_length=7, max_length=32)
     car_required: bool = False
     items: list[OrderItemCreate] = Field(min_length=1)
 
@@ -43,3 +46,15 @@ class RestaurantOrderCreate(BaseModel):
         if not address:
             raise ValueError("Delivery address cannot be empty.")
         return address
+
+    @field_validator("customer_phone")
+    @classmethod
+    def validate_customer_phone(cls, value: str) -> str:
+        phone = value.strip()
+        digits = re.sub(r"\D", "", phone)
+        if (
+            not re.fullmatch(r"\+?[0-9\s().-]+", phone)
+            or not 7 <= len(digits) <= 15
+        ):
+            raise ValueError("Enter a valid phone number with 7 to 15 digits.")
+        return phone

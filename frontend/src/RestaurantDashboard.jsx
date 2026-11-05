@@ -9,6 +9,7 @@ function RestaurantDashboard({ username, onLogout }) {
   const [order, setOrder] = useState([])
   const [carRequired, setCarRequired] = useState(false)
   const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -89,6 +90,18 @@ function RestaurantDashboard({ username, onLogout }) {
       setOrderSubmissionStatus('')
       return
     }
+    if (!customerPhone.trim()) {
+      setOrderSubmissionError('A futár keresése előtt adj meg telefonszámot.')
+      setOrderSubmissionStatus('')
+      return
+    }
+    const trimmedPhone = customerPhone.trim()
+    const phoneDigitCount = trimmedPhone.replace(/\D/g, '').length
+    if (!/^\+?[\d\s().-]+$/.test(trimmedPhone) || phoneDigitCount < 7 || phoneDigitCount > 15) {
+      setOrderSubmissionError('Érvényes, 7–15 számjegyből álló telefonszámot adj meg.')
+      setOrderSubmissionStatus('')
+      return
+    }
 
     setIsSubmittingOrder(true)
     setOrderSubmissionError('')
@@ -97,6 +110,7 @@ function RestaurantDashboard({ username, onLogout }) {
     try {
       const createdOrder = await createOrder({
         delivery_address: deliveryAddress.trim(),
+        customer_phone: trimmedPhone,
         car_required: carRequired,
         items: order.map((food) => ({
           product_id: food.id,
@@ -105,6 +119,7 @@ function RestaurantDashboard({ username, onLogout }) {
       }, username)
       setOrder([])
       setDeliveryAddress('')
+      setCustomerPhone('')
       setCarRequired(false)
       setOrderSubmissionStatus(`A rendelés elküldve a futároknak (#${createdOrder.order_id}).`)
     } catch (requestError) {
@@ -219,6 +234,17 @@ function RestaurantDashboard({ username, onLogout }) {
                   value={deliveryAddress}
                   onChange={(event) => setDeliveryAddress(event.target.value)}
                   placeholder="Add meg a szállítási címet"
+                />
+              </label>
+              <label className="delivery-address-field">
+                <span>Telefonszám</span>
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  value={customerPhone}
+                  onChange={(event) => setCustomerPhone(event.target.value)}
+                  placeholder="Adj meg egy telefonszámot"
+                  required
                 />
               </label>
               {order.map((food) => (

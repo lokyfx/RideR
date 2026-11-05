@@ -571,6 +571,19 @@ h2 {
 	cursor: pointer;
 }
 
+.rider-customer-phone {
+	flex: 1 1 100%;
+	padding-left: 38px;
+	color: var(--green);
+	font-size: 12px;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.rider-customer-phone:hover {
+	text-decoration: underline;
+}
+
 .rider-order-actions {
 	display: flex;
 	gap: 7px;

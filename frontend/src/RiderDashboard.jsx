@@ -218,6 +218,14 @@ function RiderDashboard({ username, onLogout }) {
                   </span>
                   <span className="order-status">{order.is_offer ? 'New offer' : order.status}</span>
                 </button>
+                {order.phone && (
+                  <a
+                    className="rider-customer-phone"
+                    href={`tel:${order.phone.replace(/[^\d+]/g, '')}`}
+                  >
+                    Telefon: {order.phone}
+                  </a>
+                )}
                 {order.is_offer && (
                   <div className="rider-order-actions">
                     <button
