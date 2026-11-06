@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createOrder, createProduct, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
+import { createOrder, createProduct, findRider, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
 import './restaurant-dashboard.css';
 
 function RestaurantDashboard({ username, onLogout }) {
@@ -106,7 +106,8 @@ function RestaurantDashboard({ username, onLogout }) {
       setOrder([])
       setDeliveryAddress('')
       setCarRequired(false)
-      setOrderSubmissionStatus(`A rendelés elküldve a futároknak (#${createdOrder.order_id}).`)
+      await findRider(createdOrder.order_id, username)
+      setOrderSubmissionStatus(`Futár ajánlat elküldve a rendeléshez (#${createdOrder.order_id}).`)
     } catch (requestError) {
       setOrderSubmissionError(requestError.message || 'A rendelés elküldése nem sikerült.')
     } finally {
