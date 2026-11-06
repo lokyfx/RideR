@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query
 
 from app.database import get_connection
-from app.schemas import RiderStatus
+from app.schemas import RiderLocation, RiderStatus
 
 router = APIRouter(prefix="/api")
 
@@ -26,7 +26,8 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
             """
             SELECT o.order_id, COALESCE(customer.username, 'Vendég') AS customer,
                  r.name AS restaurant, d.delivery_address AS address,
-                 d.delivery_status, o.car_required, (d.rider_id IS NULL) AS is_offer
+                 d.delivery_status, o.car_required,
+                 (d.rider_id IS NULL OR d.delivery_status = 'offered') AS is_offer
             FROM delivery d
             JOIN orders o ON o.order_id = d.order_id
             JOIN restaurant r ON r.restaurant_id = o.restaurant_id
@@ -108,6 +109,25 @@ def update_rider_status(
     return {"online": rider["is_online"]}
 
 
+@router.patch("/rider/location")
+def update_rider_location(
+    location: RiderLocation, username: str = Query(...)
+) -> dict[str, float]:
+    with get_connection() as connection:
+        rider = connection.execute(
+            """
+            UPDATE app_user
+            SET latitude = %s, longitude = %s
+            WHERE username = %s AND role = 'rider'
+            RETURNING latitude, longitude
+            """,
+            (location.latitude, location.longitude, username),
+        ).fetchone()
+    if not rider:
+        raise HTTPException(status_code=404, detail="Rider not found.")
+    return {"latitude": rider["latitude"], "longitude": rider["longitude"]}
+
+
 @router.post("/orders/{order_id}/accept")
 def accept_order(order_id: int, username: str = Query(...)) -> dict[str, Any]:
     with get_connection() as connection:
@@ -129,8 +149,8 @@ def accept_order(order_id: int, username: str = Query(...)) -> dict[str, Any]:
             UPDATE delivery AS d
             SET rider_id = %s, delivery_status = 'accepted'
             WHERE d.order_id = %s
-              AND d.rider_id IS NULL
-              AND d.delivery_status = 'waiting'
+                            AND (d.rider_id IS NULL OR d.rider_id = %s)
+                            AND d.delivery_status IN ('waiting', 'offered')
               AND EXISTS (
                   SELECT 1 FROM app_user
                   WHERE user_id = %s AND is_online IS TRUE
@@ -141,7 +161,7 @@ def accept_order(order_id: int, username: str = Query(...)) -> dict[str, Any]:
               )
             RETURNING d.order_id
             """,
-            (rider["user_id"], order_id, rider["user_id"], rider["user_id"]),
+            (rider["user_id"], order_id, rider["user_id"], rider["user_id"], rider["user_id"]),
         ).fetchone()
 
     if not accepted:
@@ -169,10 +189,12 @@ def decline_order(order_id: int, username: str = Query(...)) -> dict[str, Any]:
             """
             SELECT order_id
             FROM delivery
-            WHERE order_id = %s AND rider_id IS NULL AND delivery_status = 'waiting'
+                        WHERE order_id = %s
+                            AND (rider_id IS NULL OR rider_id = %s)
+                            AND delivery_status IN ('waiting', 'offered')
             FOR UPDATE
             """,
-            (order_id,),
+                        (order_id, rider["user_id"]),
         ).fetchone()
         if not available_order:
             raise HTTPException(
@@ -189,6 +211,15 @@ def decline_order(order_id: int, username: str = Query(...)) -> dict[str, Any]:
             """,
             (order_id, rider["user_id"]),
         ).fetchone()
+
+        connection.execute(
+            """
+            UPDATE delivery
+            SET rider_id = NULL, delivery_status = 'waiting'
+            WHERE order_id = %s AND rider_id = %s AND delivery_status = 'offered'
+            """,
+            (order_id, rider["user_id"]),
+        )
 
     if not declined:
         raise HTTPException(
