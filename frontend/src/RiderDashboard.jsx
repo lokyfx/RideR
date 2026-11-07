@@ -247,6 +247,31 @@ function RiderDashboard({ username, onLogout }) {
                     </button>
                   </div>
                 )}
+                {!order.is_offer && order.status === 'Accepted' && (
+                  <div className="rider-order-actions">
+                    <button
+                      className="accept-order-button"
+                      type="button"
+                      disabled={pendingOrderId === order.id}
+                      onClick={() => respondToOrder(order, 'deliver')}
+                    >
+                      {pendingOrderId === order.id ? 'Updating...' : 'Delivered'}
+                    </button>
+                  </div>
+                )}
+                {!order.is_offer && order.status === 'Delivered' && (
+                  <div className="rider-order-actions">
+                    <button
+                      type="button"
+                      aria-label={`Dismiss delivered order ${order.id}`}
+                      title="Remove from dashboard"
+                      disabled={pendingOrderId === order.id}
+                      onClick={() => respondToOrder(order, 'dismiss')}
+                    >
+                      {pendingOrderId === order.id ? 'Updating...' : '×'}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
