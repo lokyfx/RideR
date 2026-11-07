@@ -142,11 +142,20 @@ function RestaurantDashboard({ username, onLogout }) {
           quantity: food.quantity,
         })),
       }, username)
+      setRestaurantOrders((current) => [
+        {
+          order_id: createdOrder.order_id,
+          status: createdOrder.status,
+          delivery_address: deliveryAddress.trim(),
+          rider_name: null,
+        },
+        ...current.filter((restaurantOrder) => restaurantOrder.order_id !== createdOrder.order_id),
+      ])
       setOrder([])
       setDeliveryAddress('')
       setCustomerPhone('')
       setCarRequired(false)
-      setOrderSubmissionStatus(`A rendelés elküldve a futároknak (#${createdOrder.order_id}).`)
+      setOrderSubmissionStatus(`A rendelés elküldve (#${createdOrder.order_id}), várakozás a futár elfogadására.`)
     } catch (requestError) {
       setOrderSubmissionError(requestError.message || 'A rendelés elküldése nem sikerült.')
     } finally {
@@ -304,7 +313,7 @@ function RestaurantDashboard({ username, onLogout }) {
                       <strong>Rendelés #{restaurantOrder.order_id}</strong>
                       <span className={`restaurant-order-status status-${restaurantOrder.status}`}>
                         {restaurantOrder.status === 'waiting'
-                          ? 'Futár keresése folyamatban'
+                          ? 'Várakozás a futár elfogadására'
                           : restaurantOrder.status === 'accepted'
                             ? 'Futár elfogadta'
                             : 'Futár úton van'}
