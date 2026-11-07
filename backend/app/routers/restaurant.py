@@ -78,12 +78,38 @@ def get_restaurant_orders(username: str = Query(...)) -> list[dict[str, Any]]:
             JOIN delivery d ON d.order_id = o.order_id
             LEFT JOIN app_user rider ON rider.user_id = d.rider_id
             WHERE o.restaurant_id = %s
-              AND d.delivery_status IN ('waiting', 'accepted', 'delivering')
+              AND d.delivery_status IN ('waiting', 'accepted', 'delivering', 'delivered')
+              AND (d.delivery_status != 'delivered' OR d.restaurant_dismissed_at IS NULL)
               AND NULLIF(BTRIM(d.delivery_address), '') IS NOT NULL
             ORDER BY o.created_at DESC, o.order_id DESC
             """,
             (restaurant_id,),
         ).fetchall()
+
+
+@router.post("/orders/{order_id}/dismiss")
+def dismiss_restaurant_order(
+    order_id: int, username: str = Query(...)
+) -> dict[str, Any]:
+    restaurant_id = get_restaurant_id(username)
+    with get_connection() as connection:
+        dismissed = connection.execute(
+            """
+            UPDATE delivery AS d
+            SET restaurant_dismissed_at = NOW()
+            FROM orders o
+            WHERE d.order_id = %s
+              AND o.order_id = d.order_id
+              AND o.restaurant_id = %s
+              AND d.delivery_status = 'delivered'
+            RETURNING d.order_id
+            """,
+            (order_id, restaurant_id),
+        ).fetchone()
+
+    if not dismissed:
+        raise HTTPException(status_code=404, detail="Delivered order not found.")
+    return {"order_id": dismissed["order_id"], "status": "dismissed"}
 
 
 @router.post("/products", status_code=201)

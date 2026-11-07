@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createOrder, createProduct, getCategories, getProducts, getRestaurantName, getRestaurantOrders } from './restaurantApi.js'
+import { createOrder, createProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders } from './restaurantApi.js'
 import './restaurant-dashboard.css';
 
 function RestaurantDashboard({ username, onLogout }) {
@@ -8,6 +8,8 @@ function RestaurantDashboard({ username, onLogout }) {
   const [restaurantName, setRestaurantName] = useState('Restaurant')
   const [restaurantOrders, setRestaurantOrders] = useState([])
   const [restaurantOrdersError, setRestaurantOrdersError] = useState('')
+  const [restaurantOrderActionError, setRestaurantOrderActionError] = useState('')
+  const [pendingDismissOrderId, setPendingDismissOrderId] = useState(null)
   const [order, setOrder] = useState([])
   const [carRequired, setCarRequired] = useState(false)
   const [deliveryAddress, setDeliveryAddress] = useState('')
@@ -81,6 +83,21 @@ function RestaurantDashboard({ username, onLogout }) {
       setStock('')
     } catch {
       setError('Az étel mentése nem sikerült.')
+    }
+  }
+
+  async function dismissDeliveredOrder(orderId) {
+    if (pendingDismissOrderId !== null) return
+    setPendingDismissOrderId(orderId)
+    setRestaurantOrderActionError('')
+
+    try {
+      await dismissRestaurantOrder(orderId, username)
+      setRestaurantOrders((current) => current.filter((item) => item.order_id !== orderId))
+    } catch (requestError) {
+      setRestaurantOrderActionError(requestError.message || 'A rendelés elrejtése nem sikerült.')
+    } finally {
+      setPendingDismissOrderId(null)
     }
   }
 
@@ -298,9 +315,12 @@ function RestaurantDashboard({ username, onLogout }) {
       </section>
       <section className="restaurant-orders-panel" aria-live="polite">
         <div className="orders-heading">
-          <h2>Aktív rendelések</h2>
+          <h2>Rendelések</h2>
           <span>{restaurantOrders.length}</span>
         </div>
+        {restaurantOrderActionError && (
+          <p className="login-message" role="alert">{restaurantOrderActionError}</p>
+        )}
         {restaurantOrdersError
           ? <p className="login-message" role="alert">{restaurantOrdersError}</p>
           : restaurantOrders.length === 0
@@ -316,8 +336,22 @@ function RestaurantDashboard({ username, onLogout }) {
                           ? 'Várakozás a futár elfogadására'
                           : restaurantOrder.status === 'accepted'
                             ? 'Futár elfogadta'
-                            : 'Futár úton van'}
+                            : restaurantOrder.status === 'delivering'
+                              ? 'Futár úton van'
+                              : 'Kézbesítve'}
                       </span>
+                      {restaurantOrder.status === 'delivered' && (
+                        <button
+                          className="restaurant-order-dismiss"
+                          type="button"
+                          aria-label={`Rendelés #${restaurantOrder.order_id} eltüntetése`}
+                          title="Eltüntetés a dashboardról"
+                          disabled={pendingDismissOrderId === restaurantOrder.order_id}
+                          onClick={() => dismissDeliveredOrder(restaurantOrder.order_id)}
+                        >
+                          {pendingDismissOrderId === restaurantOrder.order_id ? '…' : '×'}
+                        </button>
+                      )}
                     </div>
                     <small>{restaurantOrder.delivery_address}</small>
                     {restaurantOrder.rider_name && (

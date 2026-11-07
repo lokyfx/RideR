@@ -197,9 +197,35 @@
 }
 
 .restaurant-order-status.status-accepted,
-.restaurant-order-status.status-delivering {
+.restaurant-order-status.status-delivering,
+.restaurant-order-status.status-delivered {
   background: #eef8f1;
   color: var(--green);
+}
+
+.restaurant-order-dismiss {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--rd-border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.restaurant-order-dismiss:hover:not(:disabled) {
+  border-color: #c85c50;
+  color: #b34236;
+}
+
+.restaurant-order-dismiss:disabled {
+  cursor: wait;
+  opacity: 0.6;
 }
 
 .restaurant-order-card small {

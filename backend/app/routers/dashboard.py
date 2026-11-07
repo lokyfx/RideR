@@ -34,7 +34,13 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
             LEFT JOIN app_user customer ON customer.user_id = o.customer_id
             WHERE NULLIF(BTRIM(d.delivery_address), '') IS NOT NULL
               AND (
-                  d.rider_id = %s
+                  (
+                      d.rider_id = %s
+                      AND (
+                          d.delivery_status != 'delivered'
+                          OR d.rider_dismissed_at IS NULL
+                      )
+                  )
                   OR (
                       %s IS TRUE
                       AND d.rider_id IS NULL
@@ -45,7 +51,7 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
                           WHERE rejection.order_id = d.order_id
                             AND rejection.rider_id = %s
                       )
-                   )
+                  )
               )
             ORDER BY is_offer DESC, o.order_id DESC
             """,
@@ -152,6 +158,63 @@ def accept_order(order_id: int, username: str = Query(...)) -> dict[str, Any]:
     if not accepted:
         raise HTTPException(status_code=409, detail="This order is no longer available.")
     return {"order_id": accepted["order_id"], "status": "accepted"}
+
+
+@router.post("/orders/{order_id}/deliver")
+def deliver_order(order_id: int, username: str = Query(...)) -> dict[str, Any]:
+    with get_connection() as connection:
+        rider = connection.execute(
+            """
+            SELECT user_id
+            FROM app_user
+            WHERE username = %s AND role = 'rider'
+            """,
+            (username,),
+        ).fetchone()
+        if not rider:
+            raise HTTPException(status_code=404, detail="Rider not found.")
+
+        delivered = connection.execute(
+            """
+            UPDATE delivery
+            SET delivery_status = 'delivered'
+            WHERE order_id = %s
+              AND rider_id = %s
+              AND delivery_status IN ('accepted', 'delivering')
+            RETURNING order_id
+            """,
+            (order_id, rider["user_id"]),
+        ).fetchone()
+
+    if not delivered:
+        raise HTTPException(
+            status_code=409,
+            detail="This order is not assigned to you or is no longer deliverable.",
+        )
+    return {"order_id": delivered["order_id"], "status": "delivered"}
+
+
+@router.post("/orders/{order_id}/dismiss")
+def dismiss_rider_order(order_id: int, username: str = Query(...)) -> dict[str, Any]:
+    with get_connection() as connection:
+        dismissed = connection.execute(
+            """
+            UPDATE delivery AS d
+            SET rider_dismissed_at = NOW()
+            FROM app_user rider
+            WHERE d.order_id = %s
+              AND d.rider_id = rider.user_id
+              AND rider.username = %s
+              AND rider.role = 'rider'
+              AND d.delivery_status = 'delivered'
+            RETURNING d.order_id
+            """,
+            (order_id, username),
+        ).fetchone()
+
+    if not dismissed:
+        raise HTTPException(status_code=404, detail="Delivered order not found.")
+    return {"order_id": dismissed["order_id"], "status": "dismissed"}
 
 
 @router.post("/orders/{order_id}/decline")

@@ -26,6 +26,17 @@ export async function getRestaurantOrders(username) {
   return response.json()
 }
 
+export async function dismissRestaurantOrder(orderId, username) {
+  const response = await fetch(endpoint(`/api/restaurant/orders/${orderId}/dismiss`, username), {
+    method: 'POST',
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || 'Order could not be dismissed')
+  }
+  return data
+}
+
 export async function createProduct(product, username) {
   const response = await fetch(endpoint('/api/restaurant/products', username), {
     method: 'POST',
