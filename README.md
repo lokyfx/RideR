@@ -57,5 +57,9 @@ A rendszer a rendelés feladásakor a következő paraméterek súlyozásával v
 <img width="815" height="591" alt="v3" src="https://github.com/user-attachments/assets/aa6800ff-e17b-4a8e-9698-319c73b58f2a" />
 
 UML diagram
+
+
 <img width="518" height="305" alt="image" src="https://github.com/user-attachments/assets/08a81ac7-f9c7-48c5-a640-68345be32d6e" />
+
+
 use_case diagram
