@@ -61,6 +61,7 @@ UML diagram
 <img width="518" height="305" alt="image" src="https://github.com/user-attachments/assets/08a81ac7-f9c7-48c5-a640-68345be32d6e" />
 
 
+
 use_case diagram
 
 ### Rendelések futároknak küldése
