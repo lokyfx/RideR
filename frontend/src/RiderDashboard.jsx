@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -47,6 +47,8 @@ function RiderDashboard({ username, onLogout }) {
   const [dashboard, setDashboard] = useState(null)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [error, setError] = useState('')
+  const [orderActionError, setOrderActionError] = useState('')
+  const [pendingOrderId, setPendingOrderId] = useState(null)
   const [connectionStatus, setConnectionStatus] = useState('')
   const [currentLocation, setCurrentLocation] = useState(null)
   const [locationError, setLocationError] = useState(() => (
@@ -56,18 +58,31 @@ function RiderDashboard({ username, onLogout }) {
   ))
   const [showProfileMenu, setShowProfileMenu] = useState(false)
 
-  useEffect(() => {
-    fetch(`/api/dashboard?username=${encodeURIComponent(username)}`)
-      .then((response) => {
-        if (!response.ok) throw new Error('Dashboard could not be loaded')
-        return response.json()
-      })
-      .then((data) => {
-        setDashboard(data)
-        setSelectedOrder(data.rider.selected_order)
-      })
-      .catch(() => setError('The backend is not available. Start the Python API and try again.'))
+  const refreshDashboard = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/dashboard?username=${encodeURIComponent(username)}`)
+      if (!response.ok) throw new Error('Dashboard could not be loaded')
+      const data = await response.json()
+      setDashboard(data)
+      setSelectedOrder((current) => (
+        data.orders.some((order) => order.id === current)
+          ? current
+          : data.orders[0]?.id ?? null
+      ))
+      setError('')
+    } catch {
+      setError('The backend is not available. Start the Python API and try again.')
+    }
   }, [username])
+
+  useEffect(() => {
+    const initialRefreshId = window.setTimeout(refreshDashboard, 0)
+    const intervalId = window.setInterval(refreshDashboard, 3000)
+    return () => {
+      window.clearTimeout(initialRefreshId)
+      window.clearInterval(intervalId)
+    }
+  }, [refreshDashboard])
 
   useEffect(() => {
     return watchGps(
@@ -81,14 +96,19 @@ function RiderDashboard({ username, onLogout }) {
 
   async function toggleOnline() {
     const online = !dashboard.rider.online
-    const response = await fetch('/api/rider/status', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ online }),
-    })
-
-    if (!response.ok) return
-    setDashboard((current) => ({ ...current, rider: { ...current.rider, online } }))
+    try {
+      const response = await fetch(`/api/rider/status?username=${encodeURIComponent(username)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ online }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.detail || 'Rider status could not be updated.')
+      setDashboard((current) => ({ ...current, rider: { ...current.rider, online: data.online } }))
+      setOrderActionError('')
+    } catch (requestError) {
+      setOrderActionError(requestError.message || 'Rider status could not be updated.')
+    }
   }
 
   async function testBackendConnection() {
@@ -104,14 +124,24 @@ function RiderDashboard({ username, onLogout }) {
     }
   }
 
-  async function selectOrder(orderId) {
-    const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}/select`, {
-      method: 'PATCH',
-    })
+  async function respondToOrder(order, action) {
+    if (pendingOrderId) return
+    setPendingOrderId(order.id)
+    setOrderActionError('')
 
-    if (!response.ok) return
-    const data = await response.json()
-    setSelectedOrder(data.selected_order)
+    try {
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(order.id.slice(1))}/${action}?username=${encodeURIComponent(username)}`,
+        { method: 'POST' },
+      )
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.detail || 'The order action could not be completed.')
+      await refreshDashboard()
+    } catch (requestError) {
+      setOrderActionError(requestError.message || 'The order action could not be completed.')
+    } finally {
+      setPendingOrderId(null)
+    }
   }
 
   if (error) return <main className="dashboard-message">{error}</main>
@@ -167,19 +197,82 @@ function RiderDashboard({ username, onLogout }) {
             <div><strong>{rider.stats.average_time}</strong><span>Avg. time</span></div>
           </div>
 
-          <div className="orders-heading"><h2>Active orders</h2><span>{orders.length}</span></div>
+          <div className="orders-heading"><h2>Orders &amp; offers</h2><span>{orders.length}</span></div>
+          {orderActionError && <p className="login-message" role="alert">{orderActionError}</p>}
           <div className="order-list">
-            {orders.map((order) => (
-              <button
-                className={`order-card ${selectedOrder === order.id ? 'selected' : ''}`}
-                type="button"
+            {orders.length === 0
+              ? <p className="rider-empty-orders">No active orders or offers.</p>
+              : orders.map((order) => (
+              <div
+                className={`order-card rider-order-card ${selectedOrder === order.id ? 'selected' : ''}`}
                 key={order.id}
-                onClick={() => selectOrder(order.id)}
               >
-                <span className="order-icon">{order.status === 'Ready' ? '↗' : order.status === 'Delivering' ? '→' : '✓'}</span>
-                <span className="order-copy"><strong>{order.id} · {order.restaurant}</strong><small>{order.customer} · {order.address}</small></span>
-                <span className={`order-status ${order.status.toLowerCase().replace(' ', '-')}`}>{order.status}</span>
-              </button>
+                <button
+                  className="rider-order-details"
+                  type="button"
+                  onClick={() => setSelectedOrder(order.id)}
+                >
+                  <span className="order-icon">{order.is_offer ? '↗' : order.status === 'Delivering' ? '→' : '✓'}</span>
+                  <span className="order-copy">
+                    <strong>{order.id} · {order.restaurant}</strong>
+                    <small>{order.customer} · {order.address || 'No address provided'}</small>
+                    {order.car_required && <small className="rider-order-car">Car requested · all online riders can accept</small>}
+                  </span>
+                  <span className="order-status">{order.is_offer ? 'New offer' : order.status}</span>
+                </button>
+                {order.phone && (
+                  <a
+                    className="rider-customer-phone"
+                    href={`tel:${order.phone.replace(/[^\d+]/g, '')}`}
+                  >
+                    Telefon: {order.phone}
+                  </a>
+                )}
+                {order.is_offer && (
+                  <div className="rider-order-actions">
+                    <button
+                      className="accept-order-button"
+                      type="button"
+                      disabled={pendingOrderId === order.id}
+                      onClick={() => respondToOrder(order, 'accept')}
+                    >
+                      {pendingOrderId === order.id ? 'Sending...' : 'Accept'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pendingOrderId === order.id}
+                      onClick={() => respondToOrder(order, 'decline')}
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
+                {!order.is_offer && order.status === 'Accepted' && (
+                  <div className="rider-order-actions">
+                    <button
+                      className="accept-order-button"
+                      type="button"
+                      disabled={pendingOrderId === order.id}
+                      onClick={() => respondToOrder(order, 'deliver')}
+                    >
+                      {pendingOrderId === order.id ? 'Updating...' : 'Delivered'}
+                    </button>
+                  </div>
+                )}
+                {!order.is_offer && order.status === 'Delivered' && (
+                  <div className="rider-order-actions">
+                    <button
+                      type="button"
+                      aria-label={`Dismiss delivered order ${order.id}`}
+                      title="Remove from dashboard"
+                      disabled={pendingOrderId === order.id}
+                      onClick={() => respondToOrder(order, 'dismiss')}
+                    >
+                      {pendingOrderId === order.id ? 'Updating...' : '×'}
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </aside>

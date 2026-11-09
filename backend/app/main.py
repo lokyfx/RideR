@@ -21,3 +21,4 @@ def health_check() -> dict[str, str]:
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(restaurant.router)
+#

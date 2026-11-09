@@ -74,6 +74,170 @@
   color: var(--green);
 }
 
+.order-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.car-required-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.car-required-toggle.is-checked {
+  border-color: var(--green);
+  background: #eef8f1;
+}
+
+.car-required-toggle input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--green);
+}
+
+.car-required-toggle:focus-within {
+  outline: 3px solid rgba(31, 122, 82, 0.25);
+  outline-offset: 2px;
+}
+
+.delivery-address-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.delivery-address-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1.5px solid var(--rd-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--rd-text-main);
+  font: inherit;
+  font-weight: 500;
+}
+
+.delivery-address-field input::placeholder {
+  color: var(--rd-text-placeholder);
+  font-weight: 400;
+}
+
+.delivery-address-field input:focus {
+  border-color: var(--rd-border-focus);
+  outline: 3px solid var(--rd-primary-light);
+}
+
+.restaurant-orders-panel {
+  padding: 28px 5vw;
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+
+.restaurant-orders-panel > .orders-heading {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.restaurant-orders-panel > .orders-heading h2 {
+  font-size: 18px;
+}
+
+.restaurant-orders-empty {
+  color: var(--muted);
+}
+
+.restaurant-orders-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.restaurant-order-card {
+  display: grid;
+  gap: 9px;
+  padding: 16px;
+  border: 1px solid var(--rd-border);
+  border-radius: 12px;
+  background: var(--rd-bg-surface);
+}
+
+.restaurant-order-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.restaurant-order-status {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #fff5dd;
+  color: #8a5a00;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.restaurant-order-status.status-accepted,
+.restaurant-order-status.status-delivering,
+.restaurant-order-status.status-delivered {
+  background: #eef8f1;
+  color: var(--green);
+}
+
+.restaurant-order-dismiss {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--rd-border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.restaurant-order-dismiss:hover:not(:disabled) {
+  border-color: #c85c50;
+  color: #b34236;
+}
+
+.restaurant-order-dismiss:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.restaurant-order-card small {
+  color: var(--muted);
+}
+
+@media (max-width: 520px) {
+  .order-heading-row {
+    flex-wrap: wrap;
+  }
+}
+
 /* Teljes szélességű kártya konténer, a mezők vertikálisan követik egymást */
 .restaurant-form {
   display: flex;

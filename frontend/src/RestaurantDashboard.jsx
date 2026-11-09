@@ -1,17 +1,27 @@
 import { useEffect, useState } from 'react'
-import { createProduct, getCategories, getProducts, getRestaurantName } from './restaurantApi.js'
+import { createOrder, createProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders } from './restaurantApi.js'
 import './restaurant-dashboard.css';
 
 function RestaurantDashboard({ username, onLogout }) {
   const [foods, setFoods] = useState([])
   const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
+  const [restaurantOrders, setRestaurantOrders] = useState([])
+  const [restaurantOrdersError, setRestaurantOrdersError] = useState('')
+  const [restaurantOrderActionError, setRestaurantOrderActionError] = useState('')
+  const [pendingDismissOrderId, setPendingDismissOrderId] = useState(null)
   const [order, setOrder] = useState([])
+  const [carRequired, setCarRequired] = useState(false)
+  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [stock, setStock] = useState('')
   const [error, setError] = useState('')
+  const [orderSubmissionError, setOrderSubmissionError] = useState('')
+  const [orderSubmissionStatus, setOrderSubmissionStatus] = useState('')
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [status, setStatus] = useState('Nyitva')
   const [showStatusMenu, setShowStatusMenu] = useState(false)
@@ -30,6 +40,29 @@ function RestaurantDashboard({ username, onLogout }) {
       })
       .catch(() => setError('Az ételek nem tölthetők be.'))
       .finally(() => setIsLoading(false))
+  }, [username])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function refreshRestaurantOrders() {
+      try {
+        const orders = await getRestaurantOrders(username)
+        if (isMounted) {
+          setRestaurantOrders(orders)
+          setRestaurantOrdersError('')
+        }
+      } catch {
+        if (isMounted) setRestaurantOrdersError('A rendelések nem tölthetők be.')
+      }
+    }
+
+    refreshRestaurantOrders()
+    const intervalId = window.setInterval(refreshRestaurantOrders, 3000)
+    return () => {
+      isMounted = false
+      window.clearInterval(intervalId)
+    }
   }, [username])
 
   async function addFood(event) {
@@ -53,7 +86,24 @@ function RestaurantDashboard({ username, onLogout }) {
     }
   }
 
+  async function dismissDeliveredOrder(orderId) {
+    if (pendingDismissOrderId !== null) return
+    setPendingDismissOrderId(orderId)
+    setRestaurantOrderActionError('')
+
+    try {
+      await dismissRestaurantOrder(orderId, username)
+      setRestaurantOrders((current) => current.filter((item) => item.order_id !== orderId))
+    } catch (requestError) {
+      setRestaurantOrderActionError(requestError.message || 'A rendelés elrejtése nem sikerült.')
+    } finally {
+      setPendingDismissOrderId(null)
+    }
+  }
+
   function addToOrder(food) {
+    setOrderSubmissionError('')
+    setOrderSubmissionStatus('')
     setOrder((current) => {
       const existingFood = current.find((item) => item.id === food.id)
 
@@ -73,6 +123,61 @@ function RestaurantDashboard({ username, onLogout }) {
         ? { ...item, quantity: (item.quantity || 1) + change }
         : item)
       .filter((item) => item.quantity > 0))
+  }
+
+  async function sendOrderToRiders() {
+    if (isSubmittingOrder) return
+    if (!deliveryAddress.trim()) {
+      setOrderSubmissionError('A futár keresése előtt add meg a szállítási címet.')
+      setOrderSubmissionStatus('')
+      return
+    }
+    if (!customerPhone.trim()) {
+      setOrderSubmissionError('A futár keresése előtt adj meg telefonszámot.')
+      setOrderSubmissionStatus('')
+      return
+    }
+    const trimmedPhone = customerPhone.trim()
+    const phoneDigitCount = trimmedPhone.replace(/\D/g, '').length
+    if (!/^\+?[\d\s().-]+$/.test(trimmedPhone) || phoneDigitCount < 7 || phoneDigitCount > 15) {
+      setOrderSubmissionError('Érvényes, 7–15 számjegyből álló telefonszámot adj meg.')
+      setOrderSubmissionStatus('')
+      return
+    }
+
+    setIsSubmittingOrder(true)
+    setOrderSubmissionError('')
+    setOrderSubmissionStatus('')
+
+    try {
+      const createdOrder = await createOrder({
+        delivery_address: deliveryAddress.trim(),
+        customer_phone: trimmedPhone,
+        car_required: carRequired,
+        items: order.map((food) => ({
+          product_id: food.id,
+          quantity: food.quantity,
+        })),
+      }, username)
+      setRestaurantOrders((current) => [
+        {
+          order_id: createdOrder.order_id,
+          status: createdOrder.status,
+          delivery_address: deliveryAddress.trim(),
+          rider_name: null,
+        },
+        ...current.filter((restaurantOrder) => restaurantOrder.order_id !== createdOrder.order_id),
+      ])
+      setOrder([])
+      setDeliveryAddress('')
+      setCustomerPhone('')
+      setCarRequired(false)
+      setOrderSubmissionStatus(`A rendelés elküldve (#${createdOrder.order_id}), várakozás a futár elfogadására.`)
+    } catch (requestError) {
+      setOrderSubmissionError(requestError.message || 'A rendelés elküldése nem sikerült.')
+    } finally {
+      setIsSubmittingOrder(false)
+    }
   }
 
   const total = order.reduce((sum, food) => sum + Number(food.price) * (food.quantity || 1), 0)
@@ -157,9 +262,42 @@ function RestaurantDashboard({ username, onLogout }) {
 
         <section className="map-panel" style={{ padding: '54px 5vw', background: 'var(--paper)' }}>
           <p className="eyebrow">Aktuális rendelés</p>
-          <h2 style={{ fontSize: 28, marginBottom: 24 }}>Rendelés #{order.length ? '001' : '---'}</h2>
+          <div className="order-heading-row">
+            <h2 style={{ fontSize: 28, marginBottom: 24 }}>Rendelés #{order.length ? '001' : '---'}</h2>
+            {order.length > 0 && (
+              <label className={`car-required-toggle ${carRequired ? 'is-checked' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={carRequired}
+                  onChange={(event) => setCarRequired(event.target.checked)}
+                />
+                <span>Autó szükséges</span>
+              </label>
+            )}
+          </div>
           {order.length === 0 ? <p style={{ color: 'var(--muted)' }}>Válassz ételt az étlapról.</p> : (
             <div className="order-list">
+              <label className="delivery-address-field">
+                <span>Szállítási cím</span>
+                <input
+                  type="text"
+                  autoComplete="street-address"
+                  value={deliveryAddress}
+                  onChange={(event) => setDeliveryAddress(event.target.value)}
+                  placeholder="Add meg a szállítási címet"
+                />
+              </label>
+              <label className="delivery-address-field">
+                <span>Telefonszám</span>
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  value={customerPhone}
+                  onChange={(event) => setCustomerPhone(event.target.value)}
+                  placeholder="Adj meg egy telefonszámot"
+                  required
+                />
+              </label>
               {order.map((food) => (
                 <div className="order-card" key={food.id}>
                   <span className="order-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span>
@@ -175,10 +313,70 @@ function RestaurantDashboard({ username, onLogout }) {
           )}
         </section>
       </section>
+      <section className="restaurant-orders-panel" aria-live="polite">
+        <div className="orders-heading">
+          <h2>Rendelések</h2>
+          <span>{restaurantOrders.length}</span>
+        </div>
+        {restaurantOrderActionError && (
+          <p className="login-message" role="alert">{restaurantOrderActionError}</p>
+        )}
+        {restaurantOrdersError
+          ? <p className="login-message" role="alert">{restaurantOrdersError}</p>
+          : restaurantOrders.length === 0
+            ? <p className="restaurant-orders-empty">Jelenleg nincs aktív rendelés.</p>
+            : (
+              <div className="restaurant-orders-list">
+                {restaurantOrders.map((restaurantOrder) => (
+                  <article className="restaurant-order-card" key={restaurantOrder.order_id}>
+                    <div className="restaurant-order-heading">
+                      <strong>Rendelés #{restaurantOrder.order_id}</strong>
+                      <span className={`restaurant-order-status status-${restaurantOrder.status}`}>
+                        {restaurantOrder.status === 'waiting'
+                          ? 'Várakozás a futár elfogadására'
+                          : restaurantOrder.status === 'accepted'
+                            ? 'Futár elfogadta'
+                            : restaurantOrder.status === 'delivering'
+                              ? 'Futár úton van'
+                              : 'Kézbesítve'}
+                      </span>
+                      {restaurantOrder.status === 'delivered' && (
+                        <button
+                          className="restaurant-order-dismiss"
+                          type="button"
+                          aria-label={`Rendelés #${restaurantOrder.order_id} eltüntetése`}
+                          title="Eltüntetés a dashboardról"
+                          disabled={pendingDismissOrderId === restaurantOrder.order_id}
+                          onClick={() => dismissDeliveredOrder(restaurantOrder.order_id)}
+                        >
+                          {pendingDismissOrderId === restaurantOrder.order_id ? '…' : '×'}
+                        </button>
+                      )}
+                    </div>
+                    <small>{restaurantOrder.delivery_address}</small>
+                    {restaurantOrder.rider_name && (
+                      <small>Futár: {restaurantOrder.rider_name}</small>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+      </section>
       {order.length > 0 && (
-        <button className="find-rider-button" type="button">
-          Find Rider
-        </button>
+        <>
+          {orderSubmissionError && <p className="order-submission-message error" role="alert">{orderSubmissionError}</p>}
+          <button
+            className="find-rider-button"
+            type="button"
+            onClick={sendOrderToRiders}
+            disabled={isSubmittingOrder}
+          >
+            {isSubmittingOrder ? 'Küldés...' : 'Find Rider'}
+          </button>
+        </>
+      )}
+      {order.length === 0 && orderSubmissionStatus && (
+        <p className="order-submission-message success" role="status">{orderSubmissionStatus}</p>
       )}
     </main>
   )
