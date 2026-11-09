@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.categories import ensure_restaurant_categories
 from app.database import get_connection
+from app.rider_dispatch import dispatch_order
 from app.schemas import ProductCreate, RestaurantOrderCreate
 
 router = APIRouter(prefix="/api/restaurant", tags=["restaurant"])
@@ -190,3 +191,21 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
         )
 
     return {"order_id": order_id, "status": "waiting"}
+
+
+@router.post("/orders/{order_id}/find-rider")
+def find_rider(order_id: int, username: str = Query(...)) -> dict[str, Any]:
+    restaurant_id = get_restaurant_id(username)
+    with get_connection() as connection:
+        owns_order = connection.execute(
+            "SELECT order_id FROM orders WHERE order_id = %s AND restaurant_id = %s",
+            (order_id, restaurant_id),
+        ).fetchone()
+        if not owns_order:
+            raise HTTPException(status_code=404, detail="Order not found.")
+
+        assignment = dispatch_order(connection, order_id)
+
+    if not assignment:
+        raise HTTPException(status_code=409, detail="No suitable rider is available.")
+    return {"status": "offered", **assignment}

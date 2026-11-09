@@ -89,10 +89,18 @@ function RiderDashboard({ username, onLogout }) {
       (location) => {
         setCurrentLocation([location.latitude, location.longitude])
         setLocationError('')
+        fetch(`/api/rider/location?username=${encodeURIComponent(username)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            latitude: location.latitude,
+            longitude: location.longitude,
+          }),
+        }).catch(() => {})
       },
       setLocationError,
     )
-  }, [])
+  }, [username])
 
   async function toggleOnline() {
     const online = !dashboard.rider.online

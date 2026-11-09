@@ -59,3 +59,13 @@ export async function createOrder(order, username) {
   }
   return data
 }
+
+export async function findRider(orderId, username) {
+  const response = await fetch(
+    `/api/restaurant/orders/${orderId}/find-rider?username=${encodeURIComponent(username)}`,
+    { method: 'POST' },
+  )
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || 'No suitable rider is available')
+  return data
+}

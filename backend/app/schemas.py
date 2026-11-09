@@ -9,6 +9,11 @@ class RiderStatus(BaseModel):
     online: bool
 
 
+class RiderLocation(BaseModel):
+    latitude: float
+    longitude: float
+
+
 class LoginCredentials(BaseModel):
     username: str
     password: str
