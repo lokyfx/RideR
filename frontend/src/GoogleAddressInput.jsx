@@ -11,7 +11,19 @@ function loadPlacesScript(apiKey) {
     const script = document.createElement('script')
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async&libraries=places`
     script.async = true
-    script.onload = () => resolve(Boolean(window.google?.maps?.importLibrary))
+    script.onload = () => {
+      const startedAt = Date.now()
+      const waitForMaps = () => {
+        if (window.google?.maps?.importLibrary) {
+          resolve(true)
+        } else if (Date.now() - startedAt >= 5000) {
+          resolve(false)
+        } else {
+          window.setTimeout(waitForMaps, 50)
+        }
+      }
+      waitForMaps()
+    }
     script.onerror = () => resolve(false)
     document.head.appendChild(script)
   })
@@ -42,6 +54,7 @@ function GoogleAddressInput({ value, onChange, placeholder }) {
         if (!loaded || !containerRef.current || cancelled) return
 
         const { PlaceAutocompleteElement } = await window.google.maps.importLibrary('places')
+        await customElements.whenDefined('gmp-place-autocomplete')
         if (cancelled) return
 
         autocompleteElement = new PlaceAutocompleteElement()

@@ -163,31 +163,12 @@
 }
 
 .google-address-input gmp-place-autocomplete {
+  display: block;
+  width: 100%;
+  min-height: 46px;
   position: relative;
   z-index: 31;
-}
-
-.google-address-input gmp-place-autocomplete {
-  display: block;
-  width: 100%;
-  min-height: 46px;
   background: #fff;
-}
-
-.google-address-input > input {
-  display: block;
-  width: 100%;
-  min-height: 46px;
-  padding: 0 14px;
-  border: 0;
-  background: #fff;
-  color: var(--rd-text-main);
-  font: inherit;
-  font-weight: 500;
-}
-
-.google-address-input > input:focus {
-  outline: none;
 }
 
 .google-address-input gmp-place-autocomplete::part(input) {
