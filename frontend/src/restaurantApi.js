@@ -47,6 +47,15 @@ export async function createProduct(product, username) {
   return response.json()
 }
 
+export async function deleteProduct(productId, username) {
+  const response = await fetch(endpoint(`/api/restaurant/products/${productId}`, username), {
+    method: 'DELETE',
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || 'Product could not be deleted')
+  return data
+}
+
 export async function createOrder(order, username) {
   const response = await fetch(endpoint('/api/restaurant/orders', username), {
     method: 'POST',

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createOrder, createProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders } from './restaurantApi.js'
+import { createOrder, createProduct, deleteProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders } from './restaurantApi.js'
 import { findRider } from './restaurantApi.js'
 import GoogleAddressInput from './GoogleAddressInput.jsx'
 import './restaurant-dashboard.css';
@@ -30,6 +30,7 @@ function RestaurantDashboard({ username, onLogout }) {
   const [status, setStatus] = useState('Nyitva')
   const [showStatusMenu, setShowStatusMenu] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [pendingDeleteProductId, setPendingDeleteProductId] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -88,6 +89,21 @@ function RestaurantDashboard({ username, onLogout }) {
       setStock('')
     } catch {
       setError('Az étel mentése nem sikerült.')
+    }
+  }
+
+  async function removeFood(foodId) {
+    if (pendingDeleteProductId !== null) return
+    setPendingDeleteProductId(foodId)
+    setError('')
+    try {
+      await deleteProduct(foodId, username)
+      setFoods((current) => current.filter((food) => food.id !== foodId))
+      setOrder((current) => current.filter((food) => food.id !== foodId))
+    } catch (requestError) {
+      setError(requestError.message || 'Az étel törlése nem sikerült.')
+    } finally {
+      setPendingDeleteProductId(null)
     }
   }
 
@@ -303,6 +319,16 @@ function RestaurantDashboard({ username, onLogout }) {
                 <span className="restaurant-menu-icon">🍽</span>
                 <span className="restaurant-menu-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span>
                 <button className="restaurant-menu-add" type="button" onClick={() => addToOrder(food)}>+</button>
+                <button
+                  className="restaurant-menu-remove"
+                  type="button"
+                  onClick={() => removeFood(food.id)}
+                  disabled={pendingDeleteProductId === food.id}
+                  aria-label={`${food.name} törlése`}
+                  title="Étel törlése"
+                >
+                  {pendingDeleteProductId === food.id ? '…' : '×'}
+                </button>
               </div>
             ))}
           </div>

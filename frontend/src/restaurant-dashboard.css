@@ -375,6 +375,33 @@
   color: #fff;
 }
 
+.restaurant-menu-remove {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #f0d5c9;
+  border-radius: 8px;
+  background: #fff8f5;
+  color: #a45d45;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.restaurant-menu-remove:hover {
+  border-color: #b34236;
+  background: #b34236;
+  color: #fff;
+}
+
+.restaurant-menu-remove:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 .restaurant-order-card {
   display: grid;
   gap: 9px;

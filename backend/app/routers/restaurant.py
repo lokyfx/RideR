@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import Any
 
+import psycopg
 from fastapi import APIRouter, HTTPException, Query
 
 from app.categories import ensure_restaurant_categories
@@ -130,6 +131,51 @@ def create_product(product: ProductCreate, username: str = Query(...)) -> dict[s
             """,
             (restaurant_id, product.category_id, product.name.strip(), product.description, product.price, product.stock),
         ).fetchone()
+
+
+@router.delete("/products/{product_id}")
+def delete_product(product_id: int, username: str = Query(...)) -> dict[str, int]:
+    restaurant_id = get_restaurant_id(username)
+    try:
+        with get_connection() as connection:
+            connection.execute(
+                """
+                DELETE FROM order_line AS line
+                                WHERE line.product_id = %s
+                                    AND EXISTS (
+                                            SELECT 1
+                                            FROM orders AS order_header
+                                            WHERE order_header.order_id = line.order_id
+                                                AND order_header.restaurant_id = %s
+                                    )
+                                    AND NOT EXISTS (
+                                            SELECT 1
+                                            FROM delivery AS delivery
+                                            WHERE delivery.order_id = line.order_id
+                                                AND delivery.delivery_status IN (
+                                                        'waiting', 'offered', 'accepted', 'delivering'
+                                                )
+                                    )
+                """,
+                (product_id, restaurant_id),
+            )
+            deleted = connection.execute(
+                """
+                DELETE FROM product
+                WHERE product_id = %s AND restaurant_id = %s
+                RETURNING product_id
+                """,
+                (product_id, restaurant_id),
+            ).fetchone()
+    except psycopg.errors.ForeignKeyViolation as error:
+        raise HTTPException(
+            status_code=409,
+            detail="This product is used in an active order and cannot be deleted.",
+        ) from error
+
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Product not found.")
+    return {"product_id": deleted["product_id"]}
 
 
 @router.post("/orders", status_code=201)
