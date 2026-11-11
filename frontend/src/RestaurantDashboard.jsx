@@ -8,6 +8,7 @@ function RestaurantDashboard({ username, onLogout }) {
   const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
   const [restaurantOrders, setRestaurantOrders] = useState([])
+  const [currentOrderId, setCurrentOrderId] = useState(null)
   const [restaurantOrdersError, setRestaurantOrdersError] = useState('')
   const [restaurantOrderActionError, setRestaurantOrderActionError] = useState('')
   const [showDeliveredOrders, setShowDeliveredOrders] = useState(false)
@@ -106,6 +107,7 @@ function RestaurantDashboard({ username, onLogout }) {
   function addToOrder(food) {
     setOrderSubmissionError('')
     setOrderSubmissionStatus('')
+    setCurrentOrderId(null)
     setOrder((current) => {
       const existingFood = current.find((item) => item.id === food.id)
 
@@ -161,6 +163,7 @@ function RestaurantDashboard({ username, onLogout }) {
           quantity: food.quantity,
         })),
       }, username)
+      setCurrentOrderId(createdOrder.order_id)
       setRestaurantOrders((current) => [
         {
           order_id: createdOrder.order_id,
@@ -274,7 +277,6 @@ function RestaurantDashboard({ username, onLogout }) {
       <section className="dashboard-content">
         <aside className="sidebar">
           <p className="eyebrow">Étlap kezelése</p>
-          <h1>Mai <span>ételek.</span></h1>
 
           <form className="restaurant-form" onSubmit={addFood} style={{ display: 'grid', gap: 8, marginBottom: 19 }}>
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Étel neve" />
@@ -303,7 +305,13 @@ function RestaurantDashboard({ username, onLogout }) {
         <section className="map-panel" style={{ padding: '54px 5vw', background: 'var(--paper)' }}>
           <p className="eyebrow">Aktuális rendelés</p>
           <div className="order-heading-row">
-            <h2 style={{ fontSize: 28, marginBottom: 24 }}>Rendelés #{order.length ? '001' : '---'}</h2>
+            <h2 style={{ fontSize: 28, marginBottom: 24 }}>
+              {order.length > 0
+                ? 'Új rendelés'
+                : currentOrderId !== null
+                  ? `Rendelés #${currentOrderId}`
+                  : '---'}
+            </h2>
             {order.length > 0 && (
               <label className={`car-required-toggle ${carRequired ? 'is-checked' : ''}`}>
                 <input
