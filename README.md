@@ -64,6 +64,4 @@ UML diagram
 
 use_case diagram
 
-### Rendelések futároknak küldése
-
-A rendelésküldéshez szükséges adatbázis-frissítések a `backend/migrations` mappában találhatók. Új vagy külön adatbázis használatakor futtasd le a migrációkat sorrendben a Neon SQL Editorban a backend indítása előtt. A `001_order_dispatch.sql` vendégrendelést, szállítási címet, futáronkénti online állapotot és rendelésenkénti elutasításokat tesz lehetővé; a `002_delivery_customer_phone.sql` a rendeléshez tartozó telefonszámot adja hozzá, amelyet a futár is lát; a `003_delivery_completion_and_dismissal.sql` a kézbesítési állapotváltáshoz és a dashboardokon külön-külön elrejthető kézbesített rendelésekhez szükséges mezőket hozza létre.
+y_completion_and_dismissal.sql` a kézbesítési állapotváltáshoz és a dashboardokon külön-külön elrejthető kézbesített rendelésekhez szükséges mezőket hozza létre.
