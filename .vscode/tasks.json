@@ -2,9 +2,18 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "backend: free port",
+      "type": "shell",
+      "command": "fuser -k 8000/tcp 2>/dev/null || true",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "frontend: dev",
       "type": "shell",
-      "command": "npm run dev -- --host 127.0.0.1 --port 5173",
+      "command": "fuser -k 5173/tcp 2>/dev/null || true; npm run dev -- --host 0.0.0.0 --port 5173",
       "options": {
         "cwd": "${workspaceFolder}/frontend"
       },
@@ -17,7 +26,7 @@
         "background": {
           "activeOnStart": true,
           "beginsPattern": ".*",
-          "endsPattern": ".*http://(localhost|127\\.0\\.0\\.1):5173/.*"
+          "endsPattern": ".*http://(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0):5173/.*"
         }
       }
     }

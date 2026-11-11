@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -49,6 +49,9 @@ function RiderDashboard({ username, onLogout }) {
   const [error, setError] = useState('')
   const [orderActionError, setOrderActionError] = useState('')
   const [pendingOrderId, setPendingOrderId] = useState(null)
+  const [activeOfferId, setActiveOfferId] = useState(null)
+  const [acceptProgress, setAcceptProgress] = useState(0)
+  const knownOfferIdsRef = useRef(null)
   const [connectionStatus, setConnectionStatus] = useState('')
   const [currentLocation, setCurrentLocation] = useState(null)
   const [locationError, setLocationError] = useState(() => (
@@ -63,6 +66,15 @@ function RiderDashboard({ username, onLogout }) {
       const response = await fetch(`/api/dashboard?username=${encodeURIComponent(username)}`)
       if (!response.ok) throw new Error('Dashboard could not be loaded')
       const data = await response.json()
+      const offers = data.orders.filter((order) => order.is_offer)
+      if (knownOfferIdsRef.current) {
+        const newOffer = offers.find((order) => !knownOfferIdsRef.current.has(order.id))
+        if (newOffer) {
+          setActiveOfferId(newOffer.id)
+          setAcceptProgress(0)
+        }
+      }
+      knownOfferIdsRef.current = new Set(offers.map((order) => order.id))
       setDashboard(data)
       setSelectedOrder((current) => (
         data.orders.some((order) => order.id === current)
@@ -144,6 +156,10 @@ function RiderDashboard({ username, onLogout }) {
       )
       const data = await response.json()
       if (!response.ok) throw new Error(data.detail || 'The order action could not be completed.')
+      if (order.id === activeOfferId) {
+        setActiveOfferId(null)
+        setAcceptProgress(0)
+      }
       await refreshDashboard()
     } catch (requestError) {
       setOrderActionError(requestError.message || 'The order action could not be completed.')
@@ -151,6 +167,8 @@ function RiderDashboard({ username, onLogout }) {
       setPendingOrderId(null)
     }
   }
+
+  const offerOrder = dashboard?.orders.find((order) => order.id === activeOfferId)
 
   if (error) return <main className="dashboard-message">{error}</main>
   if (!dashboard) return <main className="dashboard-message">Loading dashboard...</main>
@@ -163,6 +181,37 @@ function RiderDashboard({ username, onLogout }) {
 
   return (
     <main className="dashboard-shell">
+      {offerOrder && (
+        <div className="rider-offer-popup" role="dialog" aria-live="assertive" aria-label="New order offer">
+          <p className="eyebrow">New order offer</p>
+          <h2>{offerOrder.id} · {offerOrder.restaurant}</h2>
+          <p>{offerOrder.customer} · {offerOrder.address || 'No address provided'}</p>
+          {offerOrder.car_required && <small className="rider-order-car">Car requested</small>}
+          <label className="accept-slider">
+            <span>Slide to accept</span>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={acceptProgress}
+              disabled={pendingOrderId === offerOrder.id}
+              onChange={(event) => {
+                const progress = Number(event.target.value)
+                setAcceptProgress(progress)
+                if (progress === 100) respondToOrder(offerOrder, 'accept')
+              }}
+            />
+          </label>
+          <button
+            className="decline-offer-button"
+            type="button"
+            disabled={pendingOrderId === offerOrder.id}
+            onClick={() => respondToOrder(offerOrder, 'decline')}
+          >
+            Decline
+          </button>
+        </div>
+      )}
       <header className="topbar">
         <div className="brand-mark"><span>R</span>RideR</div>
         <div className="topbar-meta">
