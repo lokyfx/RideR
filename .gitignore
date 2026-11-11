@@ -31,4 +31,5 @@ __pycache__/
 # Local environment and generated files
 .env
 .env.*
+.env.local
 !.env.example

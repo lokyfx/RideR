@@ -18,6 +18,10 @@ const orderIcon = L.divIcon({
   iconAnchor: [15, 15],
 })
 
+function googleMapsUrl(address) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+}
+
 function RecenterButton({ center }) {
   const map = useMap()
 
@@ -277,6 +281,16 @@ function RiderDashboard({ username, onLogout }) {
                   </span>
                   <span className="order-status">{order.is_offer ? 'New offer' : order.status}</span>
                 </button>
+                {order.address && (
+                  <a
+                    className="rider-map-link"
+                    href={googleMapsUrl(order.address)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open in Google Maps
+                  </a>
+                )}
                 {order.phone && (
                   <a
                     className="rider-customer-phone"

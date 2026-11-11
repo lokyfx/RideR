@@ -145,6 +145,46 @@
   outline: 3px solid var(--rd-primary-light);
 }
 
+.google-address-input {
+  width: 100%;
+  min-height: 46px;
+  border: 1.5px solid var(--rd-border);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.google-address-input gmp-place-autocomplete {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  background: #fff;
+}
+
+.google-address-input gmp-place-autocomplete::part(input) {
+  min-height: 46px;
+  padding: 0 14px;
+  border: 0;
+  background: #fff;
+  color: var(--rd-text-main);
+  font: inherit;
+  font-weight: 500;
+}
+
+.google-address-input:focus-within {
+  border-color: var(--rd-border-focus);
+  box-shadow: 0 0 0 3px var(--rd-primary-light);
+}
+
+.pac-container {
+  z-index: 2000;
+  border: 1px solid var(--rd-border);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 8px 20px rgba(31, 51, 39, 0.14);
+  font-family: 'Manrope', sans-serif;
+}
+
 .restaurant-orders-panel {
   padding: 28px 5vw;
   background: #fff;

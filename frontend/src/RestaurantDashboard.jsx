@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createOrder, createProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders } from './restaurantApi.js'
 import { findRider } from './restaurantApi.js'
+import GoogleAddressInput from './GoogleAddressInput.jsx'
 import './restaurant-dashboard.css';
 
 function RestaurantDashboard({ username, onLogout }) {
@@ -331,11 +332,9 @@ function RestaurantDashboard({ username, onLogout }) {
             <div className="order-list">
               <label className="delivery-address-field">
                 <span>Szállítási cím</span>
-                <input
-                  type="text"
-                  autoComplete="street-address"
+                <GoogleAddressInput
                   value={deliveryAddress}
-                  onChange={(event) => setDeliveryAddress(event.target.value)}
+                  onChange={setDeliveryAddress}
                   placeholder="Add meg a szállítási címet"
                 />
               </label>
