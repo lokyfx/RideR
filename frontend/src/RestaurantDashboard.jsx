@@ -297,12 +297,12 @@ function RestaurantDashboard({ username, onLogout }) {
           {error && <p className="login-message" role="status">{error}</p>}
 
           <div className="orders-heading"><h2>Étlap</h2><span>{foods.length}</span></div>
-          <div className="order-list">
+          <div className="restaurant-menu-list">
             {isLoading ? <p>Étlap betöltése...</p> : foods.map((food) => (
-              <div className="order-card" key={food.id}>
-                <span className="order-icon">🍽</span>
-                <span className="order-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span>
-                <button type="button" onClick={() => addToOrder(food)}>+</button>
+              <div className="restaurant-menu-card" key={food.id}>
+                <span className="restaurant-menu-icon">🍽</span>
+                <span className="restaurant-menu-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span>
+                <button className="restaurant-menu-add" type="button" onClick={() => addToOrder(food)}>+</button>
               </div>
             ))}
           </div>

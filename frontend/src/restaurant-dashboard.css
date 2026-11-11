@@ -318,6 +318,82 @@
   gap: 12px;
 }
 
+.restaurant-menu-list {
+  display: grid;
+  gap: 8px;
+}
+
+.restaurant-menu-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px;
+  border: 1px solid var(--rd-border);
+  border-radius: 10px;
+  background: var(--rd-bg-surface);
+  color: var(--rd-text-main);
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.restaurant-menu-card:hover {
+  border-color: var(--rd-border-focus);
+  background: #f3faf5;
+  transform: translateY(-1px);
+}
+
+.restaurant-menu-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--rd-primary-light);
+  color: var(--rd-primary);
+}
+
+.restaurant-menu-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.restaurant-menu-copy strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.restaurant-menu-copy small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.restaurant-menu-add {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--rd-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--rd-primary);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.restaurant-menu-add:hover {
+  border-color: var(--rd-primary);
+  background: var(--rd-primary);
+  color: #fff;
+}
+
 .restaurant-order-card {
   display: grid;
   gap: 9px;
