@@ -9,7 +9,7 @@ function loadPlacesScript(apiKey) {
 
   placesScriptPromise = new Promise((resolve) => {
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&loading=async&libraries=places`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async&libraries=places`
     script.async = true
     script.onload = () => resolve(Boolean(window.google?.maps?.importLibrary))
     script.onerror = () => resolve(false)
@@ -19,41 +19,50 @@ function loadPlacesScript(apiKey) {
   return placesScriptPromise
 }
 
-function GoogleAddressInput({ value, onChange, placeholder }) {
+function GoogleAddressInput({ onChange, placeholder }) {
   const containerRef = useRef(null)
   const onChangeRef = useRef(onChange)
   const placeholderRef = useRef(placeholder)
-  const valueRef = useRef(value)
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
   useEffect(() => {
     onChangeRef.current = onChange
     placeholderRef.current = placeholder
-    valueRef.current = value
-  }, [onChange, placeholder, value])
+  }, [onChange, placeholder])
 
   useEffect(() => {
     let autocompleteElement
     let selectHandler
     let cancelled = false
 
-    loadPlacesScript(apiKey).then(async (loaded) => {
-      if (!loaded || !containerRef.current || cancelled) return
+    loadPlacesScript(apiKey)
+      .then(async (loaded) => {
+        if (!loaded || !containerRef.current || cancelled) return
 
-      const { PlaceAutocompleteElement } = await window.google.maps.importLibrary('places')
-      if (cancelled) return
+        const { PlaceAutocompleteElement } = await window.google.maps.importLibrary('places')
+        if (cancelled) return
 
-      autocompleteElement = new PlaceAutocompleteElement()
-      autocompleteElement.placeholder = placeholderRef.current
-      autocompleteElement.value = valueRef.current
-      selectHandler = async ({ placePrediction }) => {
-        const place = placePrediction.toPlace()
-        await place.fetchFields({ fields: ['formattedAddress'] })
-        if (place.formattedAddress) onChangeRef.current(place.formattedAddress)
-      }
-      autocompleteElement.addEventListener('gmp-select', selectHandler)
-      containerRef.current.replaceChildren(autocompleteElement)
-    })
+        autocompleteElement = new PlaceAutocompleteElement()
+        autocompleteElement.placeholder = placeholderRef.current
+        autocompleteElement.includedRegionCodes = ['ro']
+        autocompleteElement.style.display = 'block'
+        autocompleteElement.style.width = '100%'
+        autocompleteElement.style.minHeight = '46px'
+        selectHandler = async ({ placePrediction }) => {
+          const place = placePrediction.toPlace()
+          await place.fetchFields({ fields: ['formattedAddress'] })
+          const selectedAddress = place.formattedAddress?.trim()
+          if (selectedAddress) {
+            autocompleteElement.value = selectedAddress
+            onChangeRef.current(selectedAddress)
+          }
+        }
+        autocompleteElement.addEventListener('gmp-select', selectHandler)
+        containerRef.current.replaceChildren(autocompleteElement)
+      })
+      .catch((error) => {
+        console.warn('Google Places autocomplete unavailable; using manual input.', error)
+      })
 
     return () => {
       cancelled = true
@@ -64,20 +73,10 @@ function GoogleAddressInput({ value, onChange, placeholder }) {
     }
   }, [apiKey])
 
-  if (!apiKey) {
-    return (
-      <input
-        type="text"
-        autoComplete="street-address"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-      />
-    )
-  }
-
   return (
-    <div ref={containerRef} className="google-address-input" aria-label="Delivery address" />
+    <div className="google-address-input" aria-label="Delivery address">
+      <div className="google-address-widget" ref={containerRef} />
+    </div>
   )
 }
 

@@ -146,13 +146,25 @@
 }
 
 .google-address-input {
+  position: relative;
+  z-index: 30;
   width: 100%;
   min-height: 46px;
   border: 1.5px solid var(--rd-border);
   border-radius: 10px;
   background: #fff;
-  overflow: hidden;
+  overflow: visible;
   transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.google-address-widget {
+  width: 100%;
+  min-height: 46px;
+}
+
+.google-address-input gmp-place-autocomplete {
+  position: relative;
+  z-index: 31;
 }
 
 .google-address-input gmp-place-autocomplete {
@@ -160,6 +172,22 @@
   width: 100%;
   min-height: 46px;
   background: #fff;
+}
+
+.google-address-input > input {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 0;
+  background: #fff;
+  color: var(--rd-text-main);
+  font: inherit;
+  font-weight: 500;
+}
+
+.google-address-input > input:focus {
+  outline: none;
 }
 
 .google-address-input gmp-place-autocomplete::part(input) {

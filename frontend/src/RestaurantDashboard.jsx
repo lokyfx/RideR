@@ -328,16 +328,16 @@ function RestaurantDashboard({ username, onLogout }) {
               </label>
             )}
           </div>
+          <label className="delivery-address-field">
+            <span>Szállítási cím</span>
+            <GoogleAddressInput
+              value={deliveryAddress}
+              onChange={setDeliveryAddress}
+              placeholder="Add meg a szállítási címet"
+            />
+          </label>
           {order.length === 0 ? <p style={{ color: 'var(--muted)' }}>Válassz ételt az étlapról.</p> : (
             <div className="order-list">
-              <label className="delivery-address-field">
-                <span>Szállítási cím</span>
-                <GoogleAddressInput
-                  value={deliveryAddress}
-                  onChange={setDeliveryAddress}
-                  placeholder="Add meg a szállítási címet"
-                />
-              </label>
               <label className="delivery-address-field">
                 <span>Telefonszám</span>
                 <input
