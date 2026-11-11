@@ -297,7 +297,6 @@ function RiderDashboard({ username, onLogout }) {
                     <small>{order.customer} · {order.address || 'No address provided'}</small>
                     {order.car_required && <small className="rider-order-car"></small>}
                   </span>
-                  <span className="order-status">{order.is_offer ? 'New offer' : order.status}</span>
                 </div>
                 {order.phone && (
                   <a
