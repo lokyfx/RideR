@@ -151,13 +151,93 @@
   border-top: 1px solid var(--line);
 }
 
-.restaurant-orders-panel > .orders-heading {
+.restaurant-active-orders {
+  padding-bottom: 22px;
+}
+
+.restaurant-active-orders > .orders-heading {
   justify-content: flex-start;
   gap: 10px;
 }
 
 .restaurant-orders-panel > .orders-heading h2 {
   font-size: 18px;
+}
+
+.restaurant-order-history-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 9px 13px;
+  border: 1px solid var(--rd-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--rd-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.restaurant-order-history-toggle:hover {
+  border-color: var(--rd-border-focus);
+  background: #f3faf5;
+}
+
+.restaurant-order-history-toggle:focus-visible {
+  outline: 3px solid var(--rd-primary-light);
+  outline-offset: 2px;
+}
+
+.restaurant-order-history-toggle span,
+.restaurant-order-history-heading span {
+  display: inline-grid;
+  min-width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--rd-primary-light);
+  color: var(--rd-primary);
+  font-size: 12px;
+}
+
+.restaurant-order-history {
+  padding-top: 20px;
+  border-top: 1px solid var(--rd-border);
+}
+
+.restaurant-order-history-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.restaurant-order-history-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.restaurant-order-history-heading h3 {
+  margin: 0;
+  color: var(--rd-text-main);
+  font-size: 15px;
+}
+
+.restaurant-order-history-content[hidden] {
+  display: none;
+}
+
+.restaurant-order-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .restaurant-orders-empty {

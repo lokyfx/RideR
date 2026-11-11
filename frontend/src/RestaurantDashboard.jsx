@@ -10,6 +10,7 @@ function RestaurantDashboard({ username, onLogout }) {
   const [restaurantOrders, setRestaurantOrders] = useState([])
   const [restaurantOrdersError, setRestaurantOrdersError] = useState('')
   const [restaurantOrderActionError, setRestaurantOrderActionError] = useState('')
+  const [showDeliveredOrders, setShowDeliveredOrders] = useState(false)
   const [pendingDismissOrderId, setPendingDismissOrderId] = useState(null)
   const [order, setOrder] = useState([])
   const [carRequired, setCarRequired] = useState(false)
@@ -183,6 +184,43 @@ function RestaurantDashboard({ username, onLogout }) {
   }
 
   const total = order.reduce((sum, food) => sum + Number(food.price) * (food.quantity || 1), 0)
+  const activeOrders = restaurantOrders.filter((restaurantOrder) => restaurantOrder.status !== 'delivered')
+  const deliveredOrders = restaurantOrders.filter((restaurantOrder) => restaurantOrder.status === 'delivered')
+
+  function renderRestaurantOrder(restaurantOrder) {
+    return (
+      <article className="restaurant-order-card" key={restaurantOrder.order_id}>
+        <div className="restaurant-order-heading">
+          <strong>Rendelés #{restaurantOrder.order_id}</strong>
+          <span className={`restaurant-order-status status-${restaurantOrder.status}`}>
+            {restaurantOrder.status === 'waiting'
+              ? 'Várakozás a futár elfogadására'
+              : restaurantOrder.status === 'accepted'
+                ? 'Futár elfogadta'
+                : restaurantOrder.status === 'delivering'
+                  ? 'Futár úton van'
+                  : 'Kézbesítve'}
+          </span>
+          {restaurantOrder.status === 'delivered' && (
+            <button
+              className="restaurant-order-dismiss"
+              type="button"
+              aria-label={`Rendelés #${restaurantOrder.order_id} eltüntetése`}
+              title="Eltüntetés az előzményekből"
+              disabled={pendingDismissOrderId === restaurantOrder.order_id}
+              onClick={() => dismissDeliveredOrder(restaurantOrder.order_id)}
+            >
+              {pendingDismissOrderId === restaurantOrder.order_id ? '…' : '×'}
+            </button>
+          )}
+        </div>
+        <small>{restaurantOrder.delivery_address}</small>
+        {restaurantOrder.rider_name && (
+          <small>Futár: {restaurantOrder.rider_name}</small>
+        )}
+      </article>
+    )
+  }
 
   return (
     <main className="dashboard-shell">
@@ -316,53 +354,62 @@ function RestaurantDashboard({ username, onLogout }) {
         </section>
       </section>
       <section className="restaurant-orders-panel" aria-live="polite">
-        <div className="orders-heading">
-          <h2>Rendelések</h2>
-          <span>{restaurantOrders.length}</span>
-        </div>
         {restaurantOrderActionError && (
           <p className="login-message" role="alert">{restaurantOrderActionError}</p>
         )}
         {restaurantOrdersError
           ? <p className="login-message" role="alert">{restaurantOrdersError}</p>
-          : restaurantOrders.length === 0
-            ? <p className="restaurant-orders-empty">Jelenleg nincs aktív rendelés.</p>
-            : (
-              <div className="restaurant-orders-list">
-                {restaurantOrders.map((restaurantOrder) => (
-                  <article className="restaurant-order-card" key={restaurantOrder.order_id}>
-                    <div className="restaurant-order-heading">
-                      <strong>Rendelés #{restaurantOrder.order_id}</strong>
-                      <span className={`restaurant-order-status status-${restaurantOrder.status}`}>
-                        {restaurantOrder.status === 'waiting'
-                          ? 'Várakozás a futár elfogadására'
-                          : restaurantOrder.status === 'accepted'
-                            ? 'Futár elfogadta'
-                            : restaurantOrder.status === 'delivering'
-                              ? 'Futár úton van'
-                              : 'Kézbesítve'}
-                      </span>
-                      {restaurantOrder.status === 'delivered' && (
-                        <button
-                          className="restaurant-order-dismiss"
-                          type="button"
-                          aria-label={`Rendelés #${restaurantOrder.order_id} eltüntetése`}
-                          title="Eltüntetés a dashboardról"
-                          disabled={pendingDismissOrderId === restaurantOrder.order_id}
-                          onClick={() => dismissDeliveredOrder(restaurantOrder.order_id)}
-                        >
-                          {pendingDismissOrderId === restaurantOrder.order_id ? '…' : '×'}
-                        </button>
-                      )}
+          : (
+            <>
+              <section className="restaurant-active-orders" aria-labelledby="active-orders-heading">
+                <div className="orders-heading">
+                  <h2 id="active-orders-heading">Aktív rendelések</h2>
+                  <span>{activeOrders.length}</span>
+                </div>
+                {activeOrders.length === 0
+                  ? <p className="restaurant-orders-empty">Jelenleg nincs aktív rendelés.</p>
+                  : (
+                    <div className="restaurant-orders-list">
+                      {activeOrders.map(renderRestaurantOrder)}
                     </div>
-                    <small>{restaurantOrder.delivery_address}</small>
-                    {restaurantOrder.rider_name && (
-                      <small>Futár: {restaurantOrder.rider_name}</small>
+                  )}
+              </section>
+
+              <section
+                className="restaurant-order-history"
+                aria-labelledby="restaurant-order-history-heading"
+              >
+                <div className="restaurant-order-history-header">
+                  <div className="restaurant-order-history-heading">
+                    <h3 id="restaurant-order-history-heading">Rendelési előzmények</h3>
+                    <span>{deliveredOrders.length}</span>
+                  </div>
+                  <button
+                    className="restaurant-order-history-toggle"
+                    type="button"
+                    aria-expanded={showDeliveredOrders}
+                    aria-controls="restaurant-order-history-list"
+                    onClick={() => setShowDeliveredOrders((showing) => !showing)}
+                  >
+                    {showDeliveredOrders ? 'Előzmények elrejtése' : 'Előzmények megtekintése'}
+                  </button>
+                </div>
+                <div
+                  className="restaurant-order-history-content"
+                  id="restaurant-order-history-list"
+                  hidden={!showDeliveredOrders}
+                >
+                  {deliveredOrders.length === 0
+                    ? <p className="restaurant-orders-empty">Még nincs kézbesített rendelés.</p>
+                    : (
+                      <div className="restaurant-order-history-list">
+                        {deliveredOrders.map(renderRestaurantOrder)}
+                      </div>
                     )}
-                  </article>
-                ))}
-              </div>
-            )}
+                </div>
+              </section>
+            </>
+          )}
       </section>
       {order.length > 0 && (
         <>
