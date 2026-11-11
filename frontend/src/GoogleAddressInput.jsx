@@ -19,16 +19,18 @@ function loadPlacesScript(apiKey) {
   return placesScriptPromise
 }
 
-function GoogleAddressInput({ onChange, placeholder }) {
+function GoogleAddressInput({ value, onChange, placeholder }) {
   const containerRef = useRef(null)
   const onChangeRef = useRef(onChange)
   const placeholderRef = useRef(placeholder)
+  const valueRef = useRef(value)
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
   useEffect(() => {
     onChangeRef.current = onChange
     placeholderRef.current = placeholder
-  }, [onChange, placeholder])
+    valueRef.current = value
+  }, [onChange, placeholder, value])
 
   useEffect(() => {
     let autocompleteElement
@@ -44,6 +46,7 @@ function GoogleAddressInput({ onChange, placeholder }) {
 
         autocompleteElement = new PlaceAutocompleteElement()
         autocompleteElement.placeholder = placeholderRef.current
+        autocompleteElement.value = valueRef.current || ''
         autocompleteElement.includedRegionCodes = ['ro']
         autocompleteElement.style.display = 'block'
         autocompleteElement.style.width = '100%'

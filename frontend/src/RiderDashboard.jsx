@@ -268,29 +268,37 @@ function RiderDashboard({ username, onLogout }) {
                 className={`order-card rider-order-card ${selectedOrder === order.id ? 'selected' : ''}`}
                 key={order.id}
               >
-                <button
+                <div
                   className="rider-order-details"
-                  type="button"
                   onClick={() => setSelectedOrder(order.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') setSelectedOrder(order.id)
+                  }}
                 >
                   <span className="order-icon">{order.is_offer ? '↗' : order.status === 'Delivering' ? '→' : '✓'}</span>
                   <span className="order-copy">
-                    <strong>{order.id} · {order.restaurant}</strong>
+                    <span className="rider-order-title">
+                      <strong>{order.id} · {order.restaurant}</strong>
+                      {order.address && (
+                        <a
+                          className="rider-map-link"
+                          href={googleMapsUrl(order.address)}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label="Cím megnyitása Google Mapsben"
+                          title="Megnyitás Google Mapsben"
+                        >
+                          ⌖
+                        </a>
+                      )}
+                    </span>
                     <small>{order.customer} · {order.address || 'No address provided'}</small>
-                    {order.car_required && <small className="rider-order-car">Car requested · all online riders can accept</small>}
+                    {order.car_required && <small className="rider-order-car"></small>}
                   </span>
                   <span className="order-status">{order.is_offer ? 'New offer' : order.status}</span>
-                </button>
-                {order.address && (
-                  <a
-                    className="rider-map-link"
-                    href={googleMapsUrl(order.address)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open in Google Maps
-                  </a>
-                )}
+                </div>
                 {order.phone && (
                   <a
                     className="rider-customer-phone"

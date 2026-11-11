@@ -602,6 +602,13 @@ h2 {
 	cursor: pointer;
 }
 
+.rider-order-title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+
 .rider-customer-phone {
 	flex: 1 1 100%;
 	padding-left: 38px;
@@ -612,16 +619,26 @@ h2 {
 }
 
 .rider-map-link {
-	flex: 1 1 100%;
-	padding-left: 38px;
+	display: grid;
+	flex: 0 0 34px;
+	width: 34px;
+	height: 34px;
+	place-items: center;
+	padding: 0;
+	border: 1px solid #bce4cc;
+	border-radius: 9px;
+	background: #f0fbf4;
 	color: var(--green);
-	font-size: 12px;
+	font-size: 22px;
 	font-weight: 700;
 	text-decoration: none;
+	line-height: 1;
 }
 
 .rider-map-link:hover {
-	text-decoration: underline;
+	border-color: var(--green);
+	background: var(--green);
+	color: #fff;
 }
 
 .rider-customer-phone:hover {

@@ -46,6 +46,7 @@ function RestaurantDashboard({ username, onLogout }) {
       .finally(() => setIsLoading(false))
   }, [username])
 
+
   useEffect(() => {
     let isMounted = true
 
