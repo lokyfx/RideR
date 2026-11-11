@@ -129,6 +129,10 @@ function RestaurantDashboard({ username, onLogout }) {
       .filter((item) => item.quantity > 0))
   }
 
+  function removeFromOrder(foodId) {
+    setOrder((current) => current.filter((item) => item.id !== foodId))
+  }
+
   async function sendOrderToRiders() {
     if (isSubmittingOrder) return
     if (!deliveryAddress.trim()) {
@@ -353,6 +357,15 @@ function RestaurantDashboard({ username, onLogout }) {
                     <button className="quantity-button" type="button" onClick={() => updateQuantity(food.id, -1)} aria-label={`${food.name} mennyiségének csökkentése`}>−</button>
                     <span className="quantity-value">{food.quantity}</span>
                     <button className="quantity-button" type="button" onClick={() => updateQuantity(food.id, 1)} aria-label={`${food.name} mennyiségének növelése`}>+</button>
+                    <button
+                      className="order-item-remove"
+                      type="button"
+                      onClick={() => removeFromOrder(food.id)}
+                      aria-label={`${food.name} eltávolítása a rendelésből`}
+                      title="Eltávolítás a rendelésből"
+                    >
+                      ×
+                    </button>
                   </span>
                 </div>
               ))}
