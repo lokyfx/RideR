@@ -126,6 +126,7 @@ button {
 	top: calc(100% + 6px);
 	right: 0;
 	min-width: 100px;
+	width: min(340px, calc(100vw - 32px));
 	padding: 5px;
 	border: 1px solid var(--line);
 	border-radius: 10px;
@@ -144,8 +145,56 @@ button {
 	cursor: pointer;
 }
 
+.profile-menu button:disabled {
+	cursor: wait;
+	opacity: 0.65;
+}
+
 .profile-menu button:hover {
 	background: #eef8f1;
+	color: var(--green);
+}
+
+.restaurant-address-settings {
+	display: grid;
+	gap: 8px;
+	padding: 10px 5px;
+}
+
+.restaurant-address-settings .delivery-address-field {
+	margin-bottom: 0;
+}
+
+.restaurant-address-settings .google-address-input {
+	z-index: 40;
+}
+
+.restaurant-address-settings > button[type="submit"] {
+	padding: 9px 10px;
+	border: 0;
+	border-radius: 7px;
+	background: var(--green);
+	color: #fff;
+	font-weight: 700;
+	text-align: center;
+}
+
+.restaurant-address-settings > button[type="submit"]:hover:not(:disabled) {
+	background: #176040;
+	color: #fff;
+}
+
+.restaurant-address-message {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.restaurant-address-message.error {
+	color: #b34236;
+}
+
+.restaurant-address-message.success {
 	color: var(--green);
 }
 

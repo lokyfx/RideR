@@ -33,6 +33,18 @@ class ProductCreate(BaseModel):
     stock: int
 
 
+class RestaurantAddressUpdate(BaseModel):
+    address: str = Field(min_length=1, max_length=500)
+
+    @field_validator("address")
+    @classmethod
+    def validate_address(cls, value: str) -> str:
+        address = value.strip()
+        if not address:
+            raise ValueError("Restaurant address cannot be empty.")
+        return address
+
+
 class OrderItemCreate(BaseModel):
     product_id: int = Field(gt=0)
     quantity: int = Field(gt=0)

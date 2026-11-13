@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createOrder, createProduct, deleteProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders } from './restaurantApi.js'
+import { createOrder, createProduct, deleteProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders, updateRestaurantAddress } from './restaurantApi.js'
 import { findRider } from './restaurantApi.js'
 import GoogleAddressInput from './GoogleAddressInput.jsx'
 import './restaurant-dashboard.css';
@@ -8,6 +8,12 @@ function RestaurantDashboard({ username, onLogout }) {
   const [foods, setFoods] = useState([])
   const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
+  const [restaurantAddress, setRestaurantAddress] = useState('')
+  const [restaurantAddressDraft, setRestaurantAddressDraft] = useState('')
+  const [showRestaurantAddress, setShowRestaurantAddress] = useState(false)
+  const [restaurantAddressError, setRestaurantAddressError] = useState('')
+  const [restaurantAddressStatus, setRestaurantAddressStatus] = useState('')
+  const [isSavingRestaurantAddress, setIsSavingRestaurantAddress] = useState(false)
   const [restaurantOrders, setRestaurantOrders] = useState([])
   const [currentOrderId, setCurrentOrderId] = useState(null)
   const [restaurantOrdersError, setRestaurantOrdersError] = useState('')
@@ -41,6 +47,8 @@ function RestaurantDashboard({ username, onLogout }) {
       .then(([products, restaurant, categoryList]) => {
         setFoods(products)
         setRestaurantName(restaurant.name)
+        setRestaurantAddress(restaurant.address || '')
+        setRestaurantAddressDraft(restaurant.address || '')
         setCategories(categoryList)
       })
       .catch(() => setError('Az ételek nem tölthetők be.'))
@@ -119,6 +127,32 @@ function RestaurantDashboard({ username, onLogout }) {
       setRestaurantOrderActionError(requestError.message || 'A rendelés elrejtése nem sikerült.')
     } finally {
       setPendingDismissOrderId(null)
+    }
+  }
+
+  async function saveRestaurantAddress(event) {
+    event.preventDefault()
+    if (isSavingRestaurantAddress) return
+
+    const address = restaurantAddressDraft.trim()
+    if (!address) {
+      setRestaurantAddressError('Válassz ki egy pontos étteremcímet.')
+      setRestaurantAddressStatus('')
+      return
+    }
+
+    setIsSavingRestaurantAddress(true)
+    setRestaurantAddressError('')
+    setRestaurantAddressStatus('')
+    try {
+      const savedAddress = await updateRestaurantAddress(address, username)
+      setRestaurantAddress(savedAddress.address)
+      setRestaurantAddressDraft(savedAddress.address)
+      setRestaurantAddressStatus('Az étterem címe elmentve.')
+    } catch (requestError) {
+      setRestaurantAddressError(requestError.message || 'Az étterem címének mentése nem sikerült.')
+    } finally {
+      setIsSavingRestaurantAddress(false)
     }
   }
 
@@ -289,6 +323,39 @@ function RestaurantDashboard({ username, onLogout }) {
             </button>
             {showProfileMenu && (
               <div className="profile-menu">
+                <button
+                  type="button"
+                  aria-expanded={showRestaurantAddress}
+                  onClick={() => {
+                    setShowRestaurantAddress((open) => !open)
+                    setRestaurantAddressDraft(restaurantAddress)
+                    setRestaurantAddressError('')
+                    setRestaurantAddressStatus('')
+                  }}
+                >
+                  {showRestaurantAddress ? 'Címbeállítások bezárása' : 'Étterem címe'}
+                </button>
+                {showRestaurantAddress && (
+                  <form className="restaurant-address-settings" onSubmit={saveRestaurantAddress}>
+                    <label className="delivery-address-field">
+                      <span>Pontos étteremcím</span>
+                      <GoogleAddressInput
+                        value={restaurantAddressDraft}
+                        onChange={(address) => {
+                          setRestaurantAddressDraft(address)
+                          setRestaurantAddressError('')
+                          setRestaurantAddressStatus('')
+                        }}
+                        placeholder="Keresd meg az étterem címét"
+                      />
+                    </label>
+                    {restaurantAddressError && <p className="restaurant-address-message error" role="alert">{restaurantAddressError}</p>}
+                    {restaurantAddressStatus && <p className="restaurant-address-message success" role="status">{restaurantAddressStatus}</p>}
+                    <button type="submit" disabled={isSavingRestaurantAddress}>
+                      {isSavingRestaurantAddress ? 'Mentés...' : 'Cím mentése'}
+                    </button>
+                  </form>
+                )}
                 <button type="button" onClick={onLogout}>Log out</button>
               </div>
             )}

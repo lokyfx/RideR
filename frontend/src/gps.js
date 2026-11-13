@@ -4,6 +4,19 @@ const gpsOptions = {
   maximumAge: 0,
 }
 
+function getLocationErrorMessage(error) {
+  switch (error.code) {
+    case 1:
+      return 'Location access was denied. Allow location access in your browser to show your position.'
+    case 2:
+      return 'Your location is currently unavailable.'
+    case 3:
+      return 'The location request timed out. Please try again.'
+    default:
+      return 'Unable to determine your location.'
+  }
+}
+
 export function watchGps(onLocation, onError) {
   if (!navigator.geolocation) {
     onError('Location is not supported by this browser')
@@ -23,7 +36,7 @@ export function watchGps(onLocation, onError) {
         accuracy: coords.accuracy,
       })
     },
-    onError,
+    (error) => onError(getLocationErrorMessage(error)),
     gpsOptions,
   )
 

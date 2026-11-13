@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from app.categories import ensure_restaurant_categories
 from app.database import get_connection
 from app.rider_dispatch import dispatch_order
-from app.schemas import ProductCreate, RestaurantOrderCreate
+from app.schemas import ProductCreate, RestaurantAddressUpdate, RestaurantOrderCreate
 
 router = APIRouter(prefix="/api/restaurant", tags=["restaurant"])
 
@@ -28,13 +28,34 @@ def get_restaurant_name(username: str = Query(...)) -> dict[str, str]:
     restaurant_id = get_restaurant_id(username)
     with get_connection() as connection:
         restaurant = connection.execute(
-            "SELECT name FROM restaurant WHERE restaurant_id = %s",
+            "SELECT name, address FROM restaurant WHERE restaurant_id = %s",
             (restaurant_id,),
         ).fetchone()
 
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found.")
-    return {"name": restaurant["name"]}
+    return {"name": restaurant["name"], "address": restaurant["address"] or ""}
+
+
+@router.put("/address")
+def update_restaurant_address(
+    address_update: RestaurantAddressUpdate, username: str = Query(...)
+) -> dict[str, str]:
+    restaurant_id = get_restaurant_id(username)
+    with get_connection() as connection:
+        restaurant = connection.execute(
+            """
+            UPDATE restaurant
+            SET address = %s
+            WHERE restaurant_id = %s
+            RETURNING address
+            """,
+            (address_update.address, restaurant_id),
+        ).fetchone()
+
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found.")
+    return {"address": restaurant["address"]}
 
 
 @router.get("/products")
