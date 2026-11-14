@@ -173,7 +173,7 @@ function RestaurantDashboard({ username, onLogout }) {
     try {
       const tariff = Number(tariffDraft)
       if (!Number.isFinite(tariff) || tariff < 0) {
-        setRestaurantAddressError('Adj meg érvényes €/km tarifát.')
+        setRestaurantAddressError('Adj meg érvényes RON/km tarifát.')
         return
       }
       const savedSettings = await updateRestaurantSettings({ address, tariff_per_km: tariff }, username)
@@ -312,7 +312,7 @@ function RestaurantDashboard({ username, onLogout }) {
           )}
         </div>
         <small>{restaurantOrder.delivery_address}</small>
-        <small>{Number(restaurantOrder.distance_km || 0).toFixed(2)} km · Szállítás: {Number(restaurantOrder.delivery_fee || 0).toFixed(2)} € · Összesen: {Number(restaurantOrder.total_amount || 0).toFixed(2)} €</small>
+        <small>{Number(restaurantOrder.distance_km || 0).toFixed(2)} km · Szállítás: {Number(restaurantOrder.delivery_fee || 0).toFixed(2)} RON · Összesen: {Number(restaurantOrder.total_amount || 0).toFixed(2)} RON</small>
         {restaurantOrder.rider_name && (
           <small>Futár: {restaurantOrder.rider_name}</small>
         )}
@@ -418,7 +418,7 @@ function RestaurantDashboard({ username, onLogout }) {
 
           <form className="restaurant-form" onSubmit={addFood} style={{ display: 'grid', gap: 8, marginBottom: 19 }}>
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Étel neve" />
-            <input value={price} onChange={(event) => setPrice(event.target.value)} type="number" min="0" step="0.01" placeholder="Ár (€)" />
+            <input value={price} onChange={(event) => setPrice(event.target.value)} type="number" min="0" step="0.01" placeholder="Ár (RON)" />
             <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} required>
               <option value="">Kategória kiválasztása</option>
               {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
@@ -433,7 +433,7 @@ function RestaurantDashboard({ username, onLogout }) {
             {isLoading ? <p>Étlap betöltése...</p> : foods.map((food) => (
               <div className="restaurant-menu-card" key={food.id}>
                 <span className="restaurant-menu-icon">🍽</span>
-                <span className="restaurant-menu-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span>
+                <span className="restaurant-menu-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} RON</small></span>
                 <button className="restaurant-menu-add" type="button" onClick={() => addToOrder(food)}>+</button>
                 <button
                   className="restaurant-menu-remove"
@@ -494,7 +494,7 @@ function RestaurantDashboard({ username, onLogout }) {
               </label>
               {order.map((food) => (
                 <div className="order-card" key={food.id}>
-                  <span className="order-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span>
+                  <span className="order-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} RON</small></span>
                   <span className="quantity-control">
                     <button className="quantity-button" type="button" onClick={() => updateQuantity(food.id, -1)} aria-label={`${food.name} mennyiségének csökkentése`}>−</button>
                     <span className="quantity-value">{food.quantity}</span>
@@ -514,12 +514,12 @@ function RestaurantDashboard({ username, onLogout }) {
               {orderEstimate && (
                 <div className="order-estimate">
                   <span>Távolság: {orderEstimate.distance_km.toFixed(2)} km</span>
-                  <span>Szállítás: {orderEstimate.delivery_fee.toFixed(2)} €</span>
-                  <strong>Fizetendő: {orderEstimate.total_amount.toFixed(2)} €</strong>
+                  <span>Szállítás: {orderEstimate.delivery_fee.toFixed(2)} RON</span>
+                  <strong>Fizetendő: {orderEstimate.total_amount.toFixed(2)} RON</strong>
                 </div>
               )}
               {orderEstimateError && <p className="order-estimate-error" role="status">{orderEstimateError}</p>}
-              <div className="orders-heading" style={{ marginTop: 12 }}><h2>Összesen</h2><strong>{total.toFixed(2)} €</strong></div>
+              <div className="orders-heading" style={{ marginTop: 12 }}><h2>Összesen</h2><strong>{total.toFixed(2)} RON</strong></div>
             </div>
           )}
         </section>
