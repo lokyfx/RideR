@@ -14,6 +14,28 @@ export async function getRestaurantName(username) {
   return response.json()
 }
 
+export async function updateRestaurantAddress(address, username) {
+  const response = await fetch(endpoint('/api/restaurant/address', username), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address }),
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || 'Address could not be saved')
+  return data
+}
+
+export async function updateRestaurantSettings(settings, username) {
+  const response = await fetch(endpoint('/api/restaurant/settings', username), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || 'Restaurant settings could not be saved')
+  return data
+}
+
 export async function getCategories(username) {
   const response = await fetch(endpoint('/api/restaurant/categories', username))
   if (!response.ok) throw new Error('Categories could not be loaded')

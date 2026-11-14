@@ -6,8 +6,14 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.categories import ensure_restaurant_categories
 from app.database import get_connection
+from app.distance_service import DistanceServiceError, get_distance_km
 from app.rider_dispatch import dispatch_order
-from app.schemas import ProductCreate, RestaurantAddressUpdate, RestaurantOrderCreate
+from app.schemas import (
+    ProductCreate,
+    RestaurantAddressUpdate,
+    RestaurantOrderCreate,
+    RestaurantSettingsUpdate,
+)
 
 router = APIRouter(prefix="/api/restaurant", tags=["restaurant"])
 
@@ -24,17 +30,21 @@ def get_restaurant_id(username: str) -> int:
 
 
 @router.get("/name")
-def get_restaurant_name(username: str = Query(...)) -> dict[str, str]:
+def get_restaurant_name(username: str = Query(...)) -> dict[str, Any]:
     restaurant_id = get_restaurant_id(username)
     with get_connection() as connection:
         restaurant = connection.execute(
-            "SELECT name, address FROM restaurant WHERE restaurant_id = %s",
+            "SELECT name, address, tariff_per_km FROM restaurant WHERE restaurant_id = %s",
             (restaurant_id,),
         ).fetchone()
 
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found.")
-    return {"name": restaurant["name"], "address": restaurant["address"] or ""}
+    return {
+        "name": restaurant["name"],
+        "address": restaurant["address"] or "",
+        "tariff_per_km": float(restaurant["tariff_per_km"]),
+    }
 
 
 @router.put("/address")
@@ -56,6 +66,29 @@ def update_restaurant_address(
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found.")
     return {"address": restaurant["address"]}
+
+
+@router.put("/settings")
+def update_restaurant_settings(
+    settings: RestaurantSettingsUpdate, username: str = Query(...)
+) -> dict[str, Any]:
+    restaurant_id = get_restaurant_id(username)
+    with get_connection() as connection:
+        restaurant = connection.execute(
+            """
+            UPDATE restaurant
+            SET address = %s, tariff_per_km = %s
+            WHERE restaurant_id = %s
+            RETURNING address, tariff_per_km
+            """,
+            (settings.address, settings.tariff_per_km, restaurant_id),
+        ).fetchone()
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found.")
+    return {
+        "address": restaurant["address"],
+        "tariff_per_km": float(restaurant["tariff_per_km"]),
+    }
 
 
 @router.get("/products")
@@ -95,8 +128,9 @@ def get_restaurant_orders(username: str = Query(...)) -> list[dict[str, Any]]:
     with get_connection() as connection:
         return connection.execute(
             """
-            SELECT o.order_id, d.delivery_status AS status, d.delivery_address,
-                   rider.username AS rider_name
+                 SELECT o.order_id, d.delivery_status AS status, d.delivery_address,
+                     rider.username AS rider_name, o.total_amount,
+                     o.distance_km, o.delivery_fee
             FROM orders o
             JOIN delivery d ON d.order_id = o.order_id
             LEFT JOIN app_user rider ON rider.user_id = d.rider_id
@@ -225,17 +259,28 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
                 detail="One or more products are unavailable for this restaurant.",
             )
 
-        total_amount = sum(
+        product_total = sum(
             (Decimal(product_prices[product_id]) * quantity for product_id, quantity in quantities.items()),
             Decimal("0"),
         )
+        restaurant = connection.execute(
+            "SELECT address, tariff_per_km FROM restaurant WHERE restaurant_id = %s",
+            (restaurant_id,),
+        ).fetchone()
+        try:
+            distance_km = get_distance_km(restaurant["address"], order.delivery_address)
+        except DistanceServiceError as distance_error:
+            raise HTTPException(status_code=503, detail=str(distance_error)) from distance_error
+        distance_km = round(distance_km, 2)
+        delivery_fee = (Decimal(str(distance_km)) * Decimal(restaurant["tariff_per_km"])).quantize(Decimal("0.01"))
+        total_amount = product_total + delivery_fee
         order_id = connection.execute(
             """
-            INSERT INTO orders (customer_id, restaurant_id, total_amount, order_status, car_required)
-            VALUES (NULL, %s, %s, 'pending', %s)
+            INSERT INTO orders (customer_id, restaurant_id, total_amount, distance_km, delivery_fee, order_status, car_required)
+            VALUES (NULL, %s, %s, %s, %s, 'pending', %s)
             RETURNING order_id
             """,
-            (restaurant_id, total_amount, order.car_required),
+            (restaurant_id, total_amount, distance_km, delivery_fee, order.car_required),
         ).fetchone()["order_id"]
 
         for product_id, quantity in quantities.items():

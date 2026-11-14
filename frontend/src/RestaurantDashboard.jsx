@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createOrder, createProduct, deleteProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders, updateRestaurantAddress } from './restaurantApi.js'
+import { createOrder, createProduct, deleteProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders, updateRestaurantSettings } from './restaurantApi.js'
 import { findRider } from './restaurantApi.js'
 import GoogleAddressInput from './GoogleAddressInput.jsx'
 import './restaurant-dashboard.css';
@@ -10,6 +10,7 @@ function RestaurantDashboard({ username, onLogout }) {
   const [restaurantName, setRestaurantName] = useState('Restaurant')
   const [restaurantAddress, setRestaurantAddress] = useState('')
   const [restaurantAddressDraft, setRestaurantAddressDraft] = useState('')
+  const [tariffDraft, setTariffDraft] = useState('0')
   const [showRestaurantAddress, setShowRestaurantAddress] = useState(false)
   const [restaurantAddressError, setRestaurantAddressError] = useState('')
   const [restaurantAddressStatus, setRestaurantAddressStatus] = useState('')
@@ -49,6 +50,7 @@ function RestaurantDashboard({ username, onLogout }) {
         setRestaurantName(restaurant.name)
         setRestaurantAddress(restaurant.address || '')
         setRestaurantAddressDraft(restaurant.address || '')
+        setTariffDraft(String(restaurant.tariff_per_km || 0))
         setCategories(categoryList)
       })
       .catch(() => setError('Az ételek nem tölthetők be.'))
@@ -145,9 +147,15 @@ function RestaurantDashboard({ username, onLogout }) {
     setRestaurantAddressError('')
     setRestaurantAddressStatus('')
     try {
-      const savedAddress = await updateRestaurantAddress(address, username)
-      setRestaurantAddress(savedAddress.address)
-      setRestaurantAddressDraft(savedAddress.address)
+      const tariff = Number(tariffDraft)
+      if (!Number.isFinite(tariff) || tariff < 0) {
+        setRestaurantAddressError('Adj meg érvényes €/km tarifát.')
+        return
+      }
+      const savedSettings = await updateRestaurantSettings({ address, tariff_per_km: tariff }, username)
+      setRestaurantAddress(savedSettings.address)
+      setRestaurantAddressDraft(savedSettings.address)
+      setTariffDraft(String(savedSettings.tariff_per_km))
       setRestaurantAddressStatus('Az étterem címe elmentve.')
     } catch (requestError) {
       setRestaurantAddressError(requestError.message || 'Az étterem címének mentése nem sikerült.')
@@ -274,6 +282,7 @@ function RestaurantDashboard({ username, onLogout }) {
           )}
         </div>
         <small>{restaurantOrder.delivery_address}</small>
+        <small>{Number(restaurantOrder.distance_km || 0).toFixed(2)} km · Szállítás: {Number(restaurantOrder.delivery_fee || 0).toFixed(2)} € · Összesen: {Number(restaurantOrder.total_amount || 0).toFixed(2)} €</small>
         {restaurantOrder.rider_name && (
           <small>Futár: {restaurantOrder.rider_name}</small>
         )}
@@ -347,6 +356,16 @@ function RestaurantDashboard({ username, onLogout }) {
                           setRestaurantAddressStatus('')
                         }}
                         placeholder="Keresd meg az étterem címét"
+                      />
+                    </label>
+                    <label className="delivery-address-field">
+                      <span>Szállítási tarifa (€/km)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={tariffDraft}
+                        onChange={(event) => setTariffDraft(event.target.value)}
                       />
                     </label>
                     {restaurantAddressError && <p className="restaurant-address-message error" role="alert">{restaurantAddressError}</p>}

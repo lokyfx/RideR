@@ -295,6 +295,7 @@ function RiderDashboard({ username, onLogout }) {
                       )}
                     </span>
                     <small>{order.customer} · {order.address || 'No address provided'}</small>
+                    <small>{Number(order.distance_km || 0).toFixed(2)} km · Paid: €{Number(order.total_amount || 0).toFixed(2)}</small>
                     {order.car_required && <small className="rider-order-car"></small>}
                   </span>
                 </div>
