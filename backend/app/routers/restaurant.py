@@ -10,6 +10,7 @@ from app.distance_service import DistanceServiceError, get_distance_km
 from app.rider_dispatch import dispatch_order
 from app.schemas import (
     ProductCreate,
+    OrderEstimateCreate,
     RestaurantAddressUpdate,
     RestaurantOrderCreate,
     RestaurantSettingsUpdate,
@@ -303,6 +304,46 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
         )
 
     return {"order_id": order_id, "status": "waiting"}
+
+
+@router.post("/orders/estimate")
+def estimate_order(order: OrderEstimateCreate, username: str = Query(...)) -> dict[str, float]:
+    restaurant_id = get_restaurant_id(username)
+    quantities: dict[int, int] = {}
+    for item in order.items:
+        quantities[item.product_id] = quantities.get(item.product_id, 0) + item.quantity
+
+    with get_connection() as connection:
+        products = connection.execute(
+            """
+            SELECT product_id, price
+            FROM product
+            WHERE restaurant_id = %s AND product_id = ANY(%s) AND available IS TRUE
+            """,
+            (restaurant_id, list(quantities)),
+        ).fetchall()
+        product_prices = {product["product_id"]: product["price"] for product in products}
+        if len(product_prices) != len(quantities):
+            raise HTTPException(status_code=400, detail="One or more products are unavailable.")
+        restaurant = connection.execute(
+            "SELECT address, tariff_per_km FROM restaurant WHERE restaurant_id = %s",
+            (restaurant_id,),
+        ).fetchone()
+
+    try:
+        distance_km = round(get_distance_km(restaurant["address"], order.delivery_address), 2)
+    except DistanceServiceError as distance_error:
+        raise HTTPException(status_code=503, detail=str(distance_error)) from distance_error
+    product_total = sum(
+        (Decimal(product_prices[product_id]) * quantity for product_id, quantity in quantities.items()),
+        Decimal("0"),
+    )
+    delivery_fee = (Decimal(str(distance_km)) * Decimal(restaurant["tariff_per_km"])).quantize(Decimal("0.01"))
+    return {
+        "distance_km": distance_km,
+        "delivery_fee": float(delivery_fee),
+        "total_amount": float(product_total + delivery_fee),
+    }
 
 
 @router.post("/orders/{order_id}/find-rider")

@@ -91,6 +91,17 @@ export async function createOrder(order, username) {
   return data
 }
 
+export async function estimateOrder(order, username) {
+  const response = await fetch(endpoint('/api/restaurant/orders/estimate', username), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(order),
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || 'Order estimate could not be calculated')
+  return data
+}
+
 export async function findRider(orderId, username) {
   const response = await fetch(
     `/api/restaurant/orders/${orderId}/find-rider?username=${encodeURIComponent(username)}`,

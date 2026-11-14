@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createOrder, createProduct, deleteProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders, updateRestaurantSettings } from './restaurantApi.js'
+import { createOrder, createProduct, deleteProduct, dismissRestaurantOrder, estimateOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders, updateRestaurantSettings } from './restaurantApi.js'
 import { findRider } from './restaurantApi.js'
 import GoogleAddressInput from './GoogleAddressInput.jsx'
 import './restaurant-dashboard.css';
@@ -32,6 +32,8 @@ function RestaurantDashboard({ username, onLogout }) {
   const [error, setError] = useState('')
   const [orderSubmissionError, setOrderSubmissionError] = useState('')
   const [orderSubmissionStatus, setOrderSubmissionStatus] = useState('')
+  const [orderEstimate, setOrderEstimate] = useState(null)
+  const [orderEstimateError, setOrderEstimateError] = useState('')
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [status, setStatus] = useState('Nyitva')
@@ -56,6 +58,28 @@ function RestaurantDashboard({ username, onLogout }) {
       .catch(() => setError('Az ételek nem tölthetők be.'))
       .finally(() => setIsLoading(false))
   }, [username])
+
+  useEffect(() => {
+    if (!deliveryAddress.trim() || order.length === 0) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const estimate = await estimateOrder({
+          delivery_address: deliveryAddress.trim(),
+          items: order.map((food) => ({ product_id: food.id, quantity: food.quantity })),
+        }, username)
+        setOrderEstimate(estimate)
+        setOrderEstimateError('')
+      } catch (requestError) {
+        setOrderEstimate(null)
+        setOrderEstimateError(requestError.message || 'A szállítási díj nem számolható ki.')
+      }
+    }, 600)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [deliveryAddress, order, username])
 
 
   useEffect(() => {
@@ -168,6 +192,8 @@ function RestaurantDashboard({ username, onLogout }) {
     setOrderSubmissionError('')
     setOrderSubmissionStatus('')
     setCurrentOrderId(null)
+    setOrderEstimate(null)
+    setOrderEstimateError('')
     setOrder((current) => {
       const existingFood = current.find((item) => item.id === food.id)
 
@@ -182,6 +208,8 @@ function RestaurantDashboard({ username, onLogout }) {
   }
 
   function updateQuantity(foodId, change) {
+    setOrderEstimate(null)
+    setOrderEstimateError('')
     setOrder((current) => current
       .map((item) => item.id === foodId
         ? { ...item, quantity: (item.quantity || 1) + change }
@@ -190,6 +218,8 @@ function RestaurantDashboard({ username, onLogout }) {
   }
 
   function removeFromOrder(foodId) {
+    setOrderEstimate(null)
+    setOrderEstimateError('')
     setOrder((current) => current.filter((item) => item.id !== foodId))
   }
 
@@ -481,6 +511,14 @@ function RestaurantDashboard({ username, onLogout }) {
                   </span>
                 </div>
               ))}
+              {orderEstimate && (
+                <div className="order-estimate">
+                  <span>Távolság: {orderEstimate.distance_km.toFixed(2)} km</span>
+                  <span>Szállítás: {orderEstimate.delivery_fee.toFixed(2)} €</span>
+                  <strong>Fizetendő: {orderEstimate.total_amount.toFixed(2)} €</strong>
+                </div>
+              )}
+              {orderEstimateError && <p className="order-estimate-error" role="status">{orderEstimateError}</p>}
               <div className="orders-heading" style={{ marginTop: 12 }}><h2>Összesen</h2><strong>{total.toFixed(2)} €</strong></div>
             </div>
           )}

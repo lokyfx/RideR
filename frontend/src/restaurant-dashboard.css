@@ -145,6 +145,28 @@
   outline: 3px solid var(--rd-primary-light);
 }
 
+.order-estimate {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--rd-border);
+  border-radius: 10px;
+  background: #f3faf5;
+  color: var(--rd-text-main);
+  font-size: 12px;
+}
+
+.order-estimate strong {
+  color: var(--rd-primary);
+  font-size: 15px;
+}
+
+.order-estimate-error {
+  margin: 0;
+  color: #a45d45;
+  font-size: 12px;
+}
+
 .google-address-input {
   position: relative;
   z-index: 30;

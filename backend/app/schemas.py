@@ -88,3 +88,16 @@ class RestaurantOrderCreate(BaseModel):
         ):
             raise ValueError("Enter a valid phone number with 7 to 15 digits.")
         return phone
+
+
+class OrderEstimateCreate(BaseModel):
+    delivery_address: str = Field(min_length=1, max_length=500)
+    items: list[OrderItemCreate] = Field(min_length=1)
+
+    @field_validator("delivery_address")
+    @classmethod
+    def validate_estimate_address(cls, value: str) -> str:
+        address = value.strip()
+        if not address:
+            raise ValueError("Delivery address cannot be empty.")
+        return address
