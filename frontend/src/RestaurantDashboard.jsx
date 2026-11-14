@@ -359,7 +359,7 @@ function RestaurantDashboard({ username, onLogout }) {
                       />
                     </label>
                     <label className="delivery-address-field">
-                      <span>Szállítási tarifa (€/km)</span>
+                      <span>Szállítási tarifa (RON/km)</span>
                       <input
                         type="number"
                         min="0"
