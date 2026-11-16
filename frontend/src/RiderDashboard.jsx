@@ -195,6 +195,11 @@ function RiderDashboard({ username, onLogout }) {
               Étterem–cím távolság: {offerOrder.delivery_distance_km.toFixed(2)} km (légvonalban)
             </p>
           )}
+          {offerOrder.distance_km !== undefined && (
+            <p>
+              {Number(offerOrder.distance_km).toFixed(2)} km útvonal · Fizetendő: RON{Number(offerOrder.total_amount || 0).toFixed(2)}
+            </p>
+          )}
           {offerOrder.car_required && <small className="rider-order-car">Car requested</small>}
           <label className="accept-slider">
             <span>Slide to accept</span>
@@ -258,7 +263,7 @@ function RiderDashboard({ username, onLogout }) {
 
           <div className="stats-grid">
             <div><strong>{rider.stats.deliveries}</strong><span>Deliveries</span></div>
-            <div><strong>€{rider.stats.earned.toFixed(2)}</strong><span>Earned today</span></div>
+            <div><strong>RON{rider.stats.earned.toFixed(2)}</strong><span>Earned today</span></div>
             <div><strong>{rider.stats.rating}</strong><span>Rating</span></div>
             <div><strong>{rider.stats.average_time}</strong><span>Avg. time</span></div>
           </div>
@@ -305,6 +310,7 @@ function RiderDashboard({ username, onLogout }) {
                         Étterem–cím távolság: {order.delivery_distance_km.toFixed(2)} km (légvonalban)
                       </small>
                     )}
+                    <small>{Number(order.distance_km || 0).toFixed(2)} km · Paid: RON{Number(order.total_amount || 0).toFixed(2)}</small>
                     {order.car_required && <small className="rider-order-car"></small>}
                   </span>
                 </div>

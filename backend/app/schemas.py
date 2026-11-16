@@ -1,6 +1,6 @@
 import re
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from pydantic import Field, field_validator
 from typing import Literal
 
@@ -35,8 +35,8 @@ class ProductCreate(BaseModel):
 
 class RestaurantAddressUpdate(BaseModel):
     address: str = Field(min_length=1, max_length=500)
-    latitude: float = Field(ge=-90, le=90, allow_inf_nan=False)
-    longitude: float = Field(ge=-180, le=180, allow_inf_nan=False)
+    latitude: float | None = Field(default=None, ge=-90, le=90, allow_inf_nan=False)
+    longitude: float | None = Field(default=None, ge=-180, le=180, allow_inf_nan=False)
 
     @field_validator("address")
     @classmethod
@@ -45,6 +45,33 @@ class RestaurantAddressUpdate(BaseModel):
         if not address:
             raise ValueError("Restaurant address cannot be empty.")
         return address
+
+    @model_validator(mode="after")
+    def validate_coordinates(self):
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError("Latitude and longitude must both be provided.")
+        return self
+
+
+class RestaurantSettingsUpdate(BaseModel):
+    address: str = Field(min_length=1, max_length=500)
+    tariff_per_km: float = Field(ge=0, le=10000)
+    latitude: float | None = Field(default=None, ge=-90, le=90, allow_inf_nan=False)
+    longitude: float | None = Field(default=None, ge=-180, le=180, allow_inf_nan=False)
+
+    @field_validator("address")
+    @classmethod
+    def validate_settings_address(cls, value: str) -> str:
+        address = value.strip()
+        if not address:
+            raise ValueError("Restaurant address cannot be empty.")
+        return address
+
+    @model_validator(mode="after")
+    def validate_coordinates(self):
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError("Latitude and longitude must both be provided.")
+        return self
 
 
 class OrderItemCreate(BaseModel):
@@ -79,3 +106,16 @@ class RestaurantOrderCreate(BaseModel):
         ):
             raise ValueError("Enter a valid phone number with 7 to 15 digits.")
         return phone
+
+
+class OrderEstimateCreate(BaseModel):
+    delivery_address: str = Field(min_length=1, max_length=500)
+    items: list[OrderItemCreate] = Field(min_length=1)
+
+    @field_validator("delivery_address")
+    @classmethod
+    def validate_estimate_address(cls, value: str) -> str:
+        address = value.strip()
+        if not address:
+            raise ValueError("Delivery address cannot be empty.")
+        return address

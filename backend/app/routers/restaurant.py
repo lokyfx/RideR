@@ -6,8 +6,15 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.categories import ensure_restaurant_categories
 from app.database import get_connection
-from app.rider_dispatch import dispatch_order, distance_km
-from app.schemas import ProductCreate, RestaurantAddressUpdate, RestaurantOrderCreate
+from app.distance_service import DistanceServiceError, get_distance_km
+from app.rider_dispatch import dispatch_order, distance_km as straight_line_distance_km
+from app.schemas import (
+    ProductCreate,
+    OrderEstimateCreate,
+    RestaurantAddressUpdate,
+    RestaurantOrderCreate,
+    RestaurantSettingsUpdate,
+)
 
 router = APIRouter(prefix="/api/restaurant", tags=["restaurant"])
 
@@ -24,12 +31,12 @@ def get_restaurant_id(username: str) -> int:
 
 
 @router.get("/name")
-def get_restaurant_name(username: str = Query(...)) -> dict[str, str]:
+def get_restaurant_name(username: str = Query(...)) -> dict[str, Any]:
     restaurant_id = get_restaurant_id(username)
     with get_connection() as connection:
         restaurant = connection.execute(
             """
-            SELECT name, address, latitude, longitude
+            SELECT name, address, latitude, longitude, tariff_per_km
             FROM restaurant
             WHERE restaurant_id = %s
             """,
@@ -43,6 +50,7 @@ def get_restaurant_name(username: str = Query(...)) -> dict[str, str]:
         "address": restaurant["address"] or "",
         "latitude": restaurant["latitude"],
         "longitude": restaurant["longitude"],
+        "tariff_per_km": float(restaurant["tariff_per_km"]),
     }
 
 
@@ -73,6 +81,37 @@ def update_restaurant_address(
         "address": restaurant["address"],
         "latitude": restaurant["latitude"],
         "longitude": restaurant["longitude"],
+    }
+
+
+@router.put("/settings")
+def update_restaurant_settings(
+    settings: RestaurantSettingsUpdate, username: str = Query(...)
+) -> dict[str, Any]:
+    restaurant_id = get_restaurant_id(username)
+    with get_connection() as connection:
+        restaurant = connection.execute(
+            """
+            UPDATE restaurant
+            SET address = %s, latitude = %s, longitude = %s, tariff_per_km = %s
+            WHERE restaurant_id = %s
+            RETURNING address, latitude, longitude, tariff_per_km
+            """,
+            (
+                settings.address,
+                settings.latitude,
+                settings.longitude,
+                settings.tariff_per_km,
+                restaurant_id,
+            ),
+        ).fetchone()
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found.")
+    return {
+        "address": restaurant["address"],
+        "latitude": restaurant["latitude"],
+        "longitude": restaurant["longitude"],
+        "tariff_per_km": float(restaurant["tariff_per_km"]),
     }
 
 
@@ -113,8 +152,9 @@ def get_restaurant_orders(username: str = Query(...)) -> list[dict[str, Any]]:
     with get_connection() as connection:
         return connection.execute(
             """
-            SELECT o.order_id, d.delivery_status AS status, d.delivery_address,
-                   rider.username AS rider_name
+                 SELECT o.order_id, d.delivery_status AS status, d.delivery_address,
+                     rider.username AS rider_name, o.total_amount,
+                     o.distance_km, o.delivery_fee
             FROM orders o
             JOIN delivery d ON d.order_id = o.order_id
             LEFT JOIN app_user rider ON rider.user_id = d.rider_id
@@ -227,7 +267,7 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
     with get_connection() as connection:
         restaurant_location = connection.execute(
             """
-            SELECT latitude, longitude
+            SELECT address, latitude, longitude, tariff_per_km
             FROM restaurant
             WHERE restaurant_id = %s
             """,
@@ -261,12 +301,12 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
                 detail="One or more products are unavailable for this restaurant.",
             )
 
-        total_amount = sum(
+        product_total = sum(
             (Decimal(product_prices[product_id]) * quantity for product_id, quantity in quantities.items()),
             Decimal("0"),
         )
         delivery_distance_km = round(
-            distance_km(
+            straight_line_distance_km(
                 restaurant_location["latitude"],
                 restaurant_location["longitude"],
                 order.delivery_latitude,
@@ -274,13 +314,26 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
             ),
             2,
         )
+        try:
+            route_distance_km = get_distance_km(
+                restaurant_location["address"],
+                order.delivery_address,
+            )
+        except DistanceServiceError as distance_error:
+            raise HTTPException(status_code=503, detail=str(distance_error)) from distance_error
+        route_distance_km = round(route_distance_km, 2)
+        delivery_fee = (
+            Decimal(str(route_distance_km))
+            * Decimal(str(restaurant_location["tariff_per_km"]))
+        ).quantize(Decimal("0.01"))
+        total_amount = product_total + delivery_fee
         order_id = connection.execute(
             """
-            INSERT INTO orders (customer_id, restaurant_id, total_amount, order_status, car_required)
-            VALUES (NULL, %s, %s, 'pending', %s)
+            INSERT INTO orders (customer_id, restaurant_id, total_amount, distance_km, delivery_fee, order_status, car_required)
+            VALUES (NULL, %s, %s, %s, %s, 'pending', %s)
             RETURNING order_id
             """,
-            (restaurant_id, total_amount, order.car_required),
+            (restaurant_id, total_amount, route_distance_km, delivery_fee, order.car_required),
         ).fetchone()["order_id"]
 
         for product_id, quantity in quantities.items():
@@ -314,6 +367,49 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
         "order_id": order_id,
         "status": "waiting",
         "delivery_distance_km": delivery_distance_km,
+        "distance_km": route_distance_km,
+        "delivery_fee": float(delivery_fee),
+        "total_amount": float(total_amount),
+    }
+
+
+@router.post("/orders/estimate")
+def estimate_order(order: OrderEstimateCreate, username: str = Query(...)) -> dict[str, float]:
+    restaurant_id = get_restaurant_id(username)
+    quantities: dict[int, int] = {}
+    for item in order.items:
+        quantities[item.product_id] = quantities.get(item.product_id, 0) + item.quantity
+
+    with get_connection() as connection:
+        products = connection.execute(
+            """
+            SELECT product_id, price
+            FROM product
+            WHERE restaurant_id = %s AND product_id = ANY(%s) AND available IS TRUE
+            """,
+            (restaurant_id, list(quantities)),
+        ).fetchall()
+        product_prices = {product["product_id"]: product["price"] for product in products}
+        if len(product_prices) != len(quantities):
+            raise HTTPException(status_code=400, detail="One or more products are unavailable.")
+        restaurant = connection.execute(
+            "SELECT address, tariff_per_km FROM restaurant WHERE restaurant_id = %s",
+            (restaurant_id,),
+        ).fetchone()
+
+    try:
+        distance_km = round(get_distance_km(restaurant["address"], order.delivery_address), 2)
+    except DistanceServiceError as distance_error:
+        raise HTTPException(status_code=503, detail=str(distance_error)) from distance_error
+    product_total = sum(
+        (Decimal(product_prices[product_id]) * quantity for product_id, quantity in quantities.items()),
+        Decimal("0"),
+    )
+    delivery_fee = (Decimal(str(distance_km)) * Decimal(restaurant["tariff_per_km"])).quantize(Decimal("0.01"))
+    return {
+        "distance_km": distance_km,
+        "delivery_fee": float(delivery_fee),
+        "total_amount": float(product_total + delivery_fee),
     }
 
 

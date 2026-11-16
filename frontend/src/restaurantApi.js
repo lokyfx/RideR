@@ -21,9 +21,18 @@ export async function updateRestaurantAddress(address, latitude, longitude, user
     body: JSON.stringify({ address, latitude, longitude }),
   })
   const data = await response.json()
-  if (!response.ok) {
-    throw new Error(data.detail || 'Restaurant address could not be saved')
-  }
+  if (!response.ok) throw new Error(data.detail || 'Restaurant address could not be saved')
+  return data
+}
+
+export async function updateRestaurantSettings(settings, username) {
+  const response = await fetch(endpoint('/api/restaurant/settings', username), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || 'Restaurant settings could not be saved')
   return data
 }
 
@@ -79,6 +88,17 @@ export async function createOrder(order, username) {
   if (!response.ok) {
     throw new Error(data.detail || 'Order could not be sent')
   }
+  return data
+}
+
+export async function estimateOrder(order, username) {
+  const response = await fetch(endpoint('/api/restaurant/orders/estimate', username), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(order),
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || 'Order estimate could not be calculated')
   return data
 }
 

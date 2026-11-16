@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createOrder, createProduct, deleteProduct, dismissRestaurantOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders, updateRestaurantAddress } from './restaurantApi.js'
+import { createOrder, createProduct, deleteProduct, dismissRestaurantOrder, estimateOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders, updateRestaurantSettings } from './restaurantApi.js'
 import { findRider } from './restaurantApi.js'
 import GoogleAddressInput from './GoogleAddressInput.jsx'
 import './restaurant-dashboard.css';
@@ -10,6 +10,9 @@ function RestaurantDashboard({ username, onLogout }) {
   const [restaurantName, setRestaurantName] = useState('Restaurant')
   const [restaurantAddress, setRestaurantAddress] = useState('')
   const [restaurantAddressDraft, setRestaurantAddressDraft] = useState('')
+  const [restaurantCoordinates, setRestaurantCoordinates] = useState(null)
+  const [restaurantAddressCoordinates, setRestaurantAddressCoordinates] = useState(null)
+  const [tariffDraft, setTariffDraft] = useState('0')
   const [showRestaurantAddress, setShowRestaurantAddress] = useState(false)
   const [restaurantAddressError, setRestaurantAddressError] = useState('')
   const [restaurantAddressStatus, setRestaurantAddressStatus] = useState('')
@@ -23,6 +26,7 @@ function RestaurantDashboard({ username, onLogout }) {
   const [order, setOrder] = useState([])
   const [carRequired, setCarRequired] = useState(false)
   const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [deliveryCoordinates, setDeliveryCoordinates] = useState(null)
   const [customerPhone, setCustomerPhone] = useState('')
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
@@ -31,6 +35,8 @@ function RestaurantDashboard({ username, onLogout }) {
   const [error, setError] = useState('')
   const [orderSubmissionError, setOrderSubmissionError] = useState('')
   const [orderSubmissionStatus, setOrderSubmissionStatus] = useState('')
+  const [orderEstimate, setOrderEstimate] = useState(null)
+  const [orderEstimateError, setOrderEstimateError] = useState('')
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [status, setStatus] = useState('Nyitva')
@@ -49,11 +55,39 @@ function RestaurantDashboard({ username, onLogout }) {
         setRestaurantName(restaurant.name)
         setRestaurantAddress(restaurant.address || '')
         setRestaurantAddressDraft(restaurant.address || '')
+        const coordinates = restaurant.latitude !== null && restaurant.longitude !== null
+          ? { latitude: restaurant.latitude, longitude: restaurant.longitude }
+          : null
+        setRestaurantCoordinates(coordinates)
+        setRestaurantAddressCoordinates(coordinates)
+        setTariffDraft(String(restaurant.tariff_per_km || 0))
         setCategories(categoryList)
       })
       .catch(() => setError('Az ételek nem tölthetők be.'))
       .finally(() => setIsLoading(false))
   }, [username])
+
+  useEffect(() => {
+    if (!deliveryAddress.trim() || order.length === 0) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const estimate = await estimateOrder({
+          delivery_address: deliveryAddress.trim(),
+          items: order.map((food) => ({ product_id: food.id, quantity: food.quantity })),
+        }, username)
+        setOrderEstimate(estimate)
+        setOrderEstimateError('')
+      } catch (requestError) {
+        setOrderEstimate(null)
+        setOrderEstimateError(requestError.message || 'A szállítási díj nem számolható ki.')
+      }
+    }, 600)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [deliveryAddress, order, username])
 
 
   useEffect(() => {
@@ -140,14 +174,36 @@ function RestaurantDashboard({ username, onLogout }) {
       setRestaurantAddressStatus('')
       return
     }
+    if (!restaurantAddressCoordinates) {
+      setRestaurantAddressError('Válassz ki egy címet a Google találatai közül.')
+      setRestaurantAddressStatus('')
+      return
+    }
 
     setIsSavingRestaurantAddress(true)
     setRestaurantAddressError('')
     setRestaurantAddressStatus('')
     try {
-      const savedAddress = await updateRestaurantAddress(address, username)
-      setRestaurantAddress(savedAddress.address)
-      setRestaurantAddressDraft(savedAddress.address)
+      const tariff = Number(tariffDraft)
+      if (!Number.isFinite(tariff) || tariff < 0) {
+        setRestaurantAddressError('Adj meg érvényes RON/km tarifát.')
+        return
+      }
+      const savedSettings = await updateRestaurantSettings({
+        address,
+        latitude: restaurantAddressCoordinates.latitude,
+        longitude: restaurantAddressCoordinates.longitude,
+        tariff_per_km: tariff,
+      }, username)
+      setRestaurantAddress(savedSettings.address)
+      setRestaurantAddressDraft(savedSettings.address)
+      const savedCoordinates = {
+        latitude: savedSettings.latitude,
+        longitude: savedSettings.longitude,
+      }
+      setRestaurantCoordinates(savedCoordinates)
+      setRestaurantAddressCoordinates(savedCoordinates)
+      setTariffDraft(String(savedSettings.tariff_per_km))
       setRestaurantAddressStatus('Az étterem címe elmentve.')
     } catch (requestError) {
       setRestaurantAddressError(requestError.message || 'Az étterem címének mentése nem sikerült.')
@@ -160,6 +216,8 @@ function RestaurantDashboard({ username, onLogout }) {
     setOrderSubmissionError('')
     setOrderSubmissionStatus('')
     setCurrentOrderId(null)
+    setOrderEstimate(null)
+    setOrderEstimateError('')
     setOrder((current) => {
       const existingFood = current.find((item) => item.id === food.id)
 
@@ -174,6 +232,8 @@ function RestaurantDashboard({ username, onLogout }) {
   }
 
   function updateQuantity(foodId, change) {
+    setOrderEstimate(null)
+    setOrderEstimateError('')
     setOrder((current) => current
       .map((item) => item.id === foodId
         ? { ...item, quantity: (item.quantity || 1) + change }
@@ -182,6 +242,8 @@ function RestaurantDashboard({ username, onLogout }) {
   }
 
   function removeFromOrder(foodId) {
+    setOrderEstimate(null)
+    setOrderEstimateError('')
     setOrder((current) => current.filter((item) => item.id !== foodId))
   }
 
@@ -189,6 +251,16 @@ function RestaurantDashboard({ username, onLogout }) {
     if (isSubmittingOrder) return
     if (!deliveryAddress.trim()) {
       setOrderSubmissionError('A futár keresése előtt add meg a szállítási címet.')
+      setOrderSubmissionStatus('')
+      return
+    }
+    if (!deliveryCoordinates) {
+      setOrderSubmissionError('Válassz ki egy címet a Google találatai közül.')
+      setOrderSubmissionStatus('')
+      return
+    }
+    if (!restaurantCoordinates) {
+      setOrderSubmissionError('Előbb mentsd el az étterem pontos címét a profilmenüben.')
       setOrderSubmissionStatus('')
       return
     }
@@ -212,6 +284,8 @@ function RestaurantDashboard({ username, onLogout }) {
     try {
       const createdOrder = await createOrder({
         delivery_address: deliveryAddress.trim(),
+        delivery_latitude: deliveryCoordinates.latitude,
+        delivery_longitude: deliveryCoordinates.longitude,
         customer_phone: trimmedPhone,
         car_required: carRequired,
         items: order.map((food) => ({
@@ -225,12 +299,17 @@ function RestaurantDashboard({ username, onLogout }) {
           order_id: createdOrder.order_id,
           status: createdOrder.status,
           delivery_address: deliveryAddress.trim(),
+          distance_km: createdOrder.distance_km,
+          delivery_distance_km: createdOrder.delivery_distance_km,
+          delivery_fee: createdOrder.delivery_fee,
+          total_amount: createdOrder.total_amount,
           rider_name: null,
         },
         ...current.filter((restaurantOrder) => restaurantOrder.order_id !== createdOrder.order_id),
       ])
       setOrder([])
       setDeliveryAddress('')
+      setDeliveryCoordinates(null)
       setCustomerPhone('')
       setCarRequired(false)
       await findRider(createdOrder.order_id, username)
@@ -274,6 +353,7 @@ function RestaurantDashboard({ username, onLogout }) {
           )}
         </div>
         <small>{restaurantOrder.delivery_address}</small>
+        <small>{Number(restaurantOrder.distance_km || 0).toFixed(2)} km · Szállítás: {Number(restaurantOrder.delivery_fee || 0).toFixed(2)} RON · Összesen: {Number(restaurantOrder.total_amount || 0).toFixed(2)} RON</small>
         {restaurantOrder.rider_name && (
           <small>Futár: {restaurantOrder.rider_name}</small>
         )}
@@ -329,6 +409,7 @@ function RestaurantDashboard({ username, onLogout }) {
                   onClick={() => {
                     setShowRestaurantAddress((open) => !open)
                     setRestaurantAddressDraft(restaurantAddress)
+                    setRestaurantAddressCoordinates(restaurantCoordinates)
                     setRestaurantAddressError('')
                     setRestaurantAddressStatus('')
                   }}
@@ -341,12 +422,27 @@ function RestaurantDashboard({ username, onLogout }) {
                       <span>Pontos étteremcím</span>
                       <GoogleAddressInput
                         value={restaurantAddressDraft}
-                        onChange={(address) => {
-                          setRestaurantAddressDraft(address)
+                        onChange={(place) => {
+                          setRestaurantAddressDraft(place.address)
+                          setRestaurantAddressCoordinates(
+                            place.latitude !== null && place.longitude !== null
+                              ? { latitude: place.latitude, longitude: place.longitude }
+                              : null,
+                          )
                           setRestaurantAddressError('')
                           setRestaurantAddressStatus('')
                         }}
                         placeholder="Keresd meg az étterem címét"
+                      />
+                    </label>
+                    <label className="delivery-address-field">
+                      <span>Szállítási tarifa (RON/km)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={tariffDraft}
+                        onChange={(event) => setTariffDraft(event.target.value)}
                       />
                     </label>
                     {restaurantAddressError && <p className="restaurant-address-message error" role="alert">{restaurantAddressError}</p>}
@@ -369,7 +465,7 @@ function RestaurantDashboard({ username, onLogout }) {
 
           <form className="restaurant-form" onSubmit={addFood} style={{ display: 'grid', gap: 8, marginBottom: 19 }}>
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Étel neve" />
-            <input value={price} onChange={(event) => setPrice(event.target.value)} type="number" min="0" step="0.01" placeholder="Ár (€)" />
+            <input value={price} onChange={(event) => setPrice(event.target.value)} type="number" min="0" step="0.01" placeholder="Ár (RON)" />
             <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} required>
               <option value="">Kategória kiválasztása</option>
               {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
@@ -384,7 +480,7 @@ function RestaurantDashboard({ username, onLogout }) {
             {isLoading ? <p>Étlap betöltése...</p> : foods.map((food) => (
               <div className="restaurant-menu-card" key={food.id}>
                 <span className="restaurant-menu-icon">🍽</span>
-                <span className="restaurant-menu-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span>
+                <span className="restaurant-menu-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} RON</small></span>
                 <button className="restaurant-menu-add" type="button" onClick={() => addToOrder(food)}>+</button>
                 <button
                   className="restaurant-menu-remove"
@@ -426,7 +522,14 @@ function RestaurantDashboard({ username, onLogout }) {
             <span>Szállítási cím</span>
             <GoogleAddressInput
               value={deliveryAddress}
-              onChange={setDeliveryAddress}
+              onChange={(place) => {
+                setDeliveryAddress(place.address)
+                setDeliveryCoordinates(
+                  place.latitude !== null && place.longitude !== null
+                    ? { latitude: place.latitude, longitude: place.longitude }
+                    : null,
+                )
+              }}
               placeholder="Add meg a szállítási címet"
             />
           </label>
@@ -445,7 +548,7 @@ function RestaurantDashboard({ username, onLogout }) {
               </label>
               {order.map((food) => (
                 <div className="order-card" key={food.id}>
-                  <span className="order-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} €</small></span>
+                  <span className="order-copy"><strong>{food.name}</strong><small>{Number(food.price).toFixed(2)} RON</small></span>
                   <span className="quantity-control">
                     <button className="quantity-button" type="button" onClick={() => updateQuantity(food.id, -1)} aria-label={`${food.name} mennyiségének csökkentése`}>−</button>
                     <span className="quantity-value">{food.quantity}</span>
@@ -462,7 +565,15 @@ function RestaurantDashboard({ username, onLogout }) {
                   </span>
                 </div>
               ))}
-              <div className="orders-heading" style={{ marginTop: 12 }}><h2>Összesen</h2><strong>{total.toFixed(2)} €</strong></div>
+              {orderEstimate && (
+                <div className="order-estimate">
+                  <span>Távolság: {orderEstimate.distance_km.toFixed(2)} km</span>
+                  <span>Szállítás: {orderEstimate.delivery_fee.toFixed(2)} RON</span>
+                  <strong>Fizetendő: {orderEstimate.total_amount.toFixed(2)} RON</strong>
+                </div>
+              )}
+              {orderEstimateError && <p className="order-estimate-error" role="status">{orderEstimateError}</p>}
+              <div className="orders-heading" style={{ marginTop: 12 }}><h2>Összesen</h2><strong>{total.toFixed(2)} RON</strong></div>
             </div>
           )}
         </section>
