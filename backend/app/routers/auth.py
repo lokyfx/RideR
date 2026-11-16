@@ -54,19 +54,27 @@ def register(credentials: RegistrationCredentials) -> dict[str, str]:
         with get_connection() as connection:
             connection.execute(
                 """
-                INSERT INTO app_user (username, password_hash, role)
-                VALUES (%s, %s, %s)
+                INSERT INTO app_user (
+                    username, password_hash, role, phone_number, vehicle_type
+                )
+                VALUES (%s, %s, %s, %s, %s)
                 """,
-                (credentials.username, hash_password(credentials.password), credentials.role),
+                (
+                    credentials.username,
+                    hash_password(credentials.password),
+                    credentials.role,
+                    credentials.phone_number,
+                    "car" if credentials.role == "rider" and credentials.has_car else "other",
+                ),
             )
             if credentials.role == "restaurant":
                 restaurant_id = connection.execute(
                     """
-                    INSERT INTO restaurant (name, address)
-                    VALUES (%s, %s)
+                    INSERT INTO restaurant (name, address, phone_number)
+                    VALUES (%s, %s, %s)
                     RETURNING restaurant_id
                     """,
-                    (credentials.username, ""),
+                    (credentials.username, "", credentials.phone_number),
                 ).fetchone()["restaurant_id"]
                 connection.execute(
                     """

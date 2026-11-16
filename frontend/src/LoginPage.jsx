@@ -23,7 +23,13 @@ function LoginPage({ onLogin }) {
         body: JSON.stringify({
           username: formData.get('username'),
           password: formData.get('password'),
-          ...(isRegistering ? { role: registrationRole } : {}),
+          ...(isRegistering
+            ? {
+                role: registrationRole,
+                phone_number: formData.get('phone_number'),
+                has_car: registrationRole === 'rider' && formData.get('has_car') === 'on',
+              }
+            : {}),
         }),
       })
 
@@ -110,26 +116,46 @@ function LoginPage({ onLogin }) {
           </div>
 
           {isRegistering && (
-            <div className="role-switch" role="group" aria-label="Regisztráció típusa">
-              <span
-                className={`role-slider ${registrationRole === 'restaurant' ? 'restaurant' : ''}`}
-                aria-hidden="true"
+            <>
+              <div className="role-switch" role="group" aria-label="Regisztráció típusa">
+                <span
+                  className={`role-slider ${registrationRole === 'restaurant' ? 'restaurant' : ''}`}
+                  aria-hidden="true"
+                />
+                <button
+                  className={registrationRole === 'rider' ? 'selected' : ''}
+                  type="button"
+                  onClick={() => setRegistrationRole('rider')}
+                >
+                  Futár
+                </button>
+                <button
+                  className={registrationRole === 'restaurant' ? 'selected' : ''}
+                  type="button"
+                  onClick={() => setRegistrationRole('restaurant')}
+                >
+                  Étterem
+                </button>
+              </div>
+
+              <label htmlFor="phone-number">Telefonszám</label>
+              <input
+                id="phone-number"
+                name="phone_number"
+                type="tel"
+                autoComplete="tel"
+                maxLength={32}
+                placeholder="+40 30 123 4567"
+                required
               />
-              <button
-                className={registrationRole === 'rider' ? 'selected' : ''}
-                type="button"
-                onClick={() => setRegistrationRole('rider')}
-              >
-                Futár
-              </button>
-              <button
-                className={registrationRole === 'restaurant' ? 'selected' : ''}
-                type="button"
-                onClick={() => setRegistrationRole('restaurant')}
-              >
-                Étterem
-              </button>
-            </div>
+
+              {registrationRole === 'rider' && (
+                <label className="registration-checkbox" htmlFor="has-car">
+                  <input id="has-car" name="has_car" type="checkbox" />
+                  <span>Autóval végzek kiszállítást</span>
+                </label>
+              )}
+            </>
           )}
 
           <button type="submit" disabled={isSubmitting}>

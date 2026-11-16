@@ -23,6 +23,20 @@ class RegistrationCredentials(BaseModel):
     username: str
     password: str = Field(min_length=8)
     role: Literal["rider", "restaurant"]
+    phone_number: str = Field(min_length=7, max_length=32)
+    has_car: bool = False
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_registration_phone(cls, value: str) -> str:
+        phone = value.strip()
+        digits = re.sub(r"\D", "", phone)
+        if (
+            not re.fullmatch(r"\+?[0-9\s().-]+", phone)
+            or not 7 <= len(digits) <= 15
+        ):
+            raise ValueError("Enter a valid phone number with 7 to 15 digits.")
+        return phone
 
 
 class ProductCreate(BaseModel):
