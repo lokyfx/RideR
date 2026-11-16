@@ -13,7 +13,7 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
     with get_connection() as connection:
         rider = connection.execute(
             """
-            SELECT user_id, username, is_online
+            SELECT user_id, username, is_online, phone_number
             FROM app_user
             WHERE username = %s AND role = 'rider'
             """,
@@ -98,6 +98,7 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
             "name": name,
             "initials": name[:2].upper(),
             "online": rider["is_online"],
+            "phone_number": rider["phone_number"] or "",
             "date": "Today",
             "stats": {
                 "deliveries": deliveries["count"],

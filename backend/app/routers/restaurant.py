@@ -36,7 +36,7 @@ def get_restaurant_name(username: str = Query(...)) -> dict[str, Any]:
     with get_connection() as connection:
         restaurant = connection.execute(
             """
-            SELECT name, address, latitude, longitude, tariff_per_km
+            SELECT name, address, latitude, longitude, tariff_per_km, phone_number
             FROM restaurant
             WHERE restaurant_id = %s
             """,
@@ -51,6 +51,7 @@ def get_restaurant_name(username: str = Query(...)) -> dict[str, Any]:
         "latitude": restaurant["latitude"],
         "longitude": restaurant["longitude"],
         "tariff_per_km": float(restaurant["tariff_per_km"]),
+        "phone_number": restaurant["phone_number"] or "",
     }
 
 

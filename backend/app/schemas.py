@@ -5,6 +5,17 @@ from pydantic import Field, field_validator
 from typing import Literal
 
 
+def _validate_phone_number(value: str) -> str:
+    phone = value.strip()
+    digits = re.sub(r"\D", "", phone)
+    if (
+        not re.fullmatch(r"\+?[0-9\s().-]+", phone)
+        or not 7 <= len(digits) <= 15
+    ):
+        raise ValueError("Enter a valid phone number with 7 to 15 digits.")
+    return phone
+
+
 class RiderStatus(BaseModel):
     online: bool
 
@@ -29,14 +40,16 @@ class RegistrationCredentials(BaseModel):
     @field_validator("phone_number")
     @classmethod
     def validate_registration_phone(cls, value: str) -> str:
-        phone = value.strip()
-        digits = re.sub(r"\D", "", phone)
-        if (
-            not re.fullmatch(r"\+?[0-9\s().-]+", phone)
-            or not 7 <= len(digits) <= 15
-        ):
-            raise ValueError("Enter a valid phone number with 7 to 15 digits.")
-        return phone
+        return _validate_phone_number(value)
+
+
+class PhoneNumberUpdate(BaseModel):
+    phone_number: str = Field(min_length=7, max_length=32)
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_updated_phone(cls, value: str) -> str:
+        return _validate_phone_number(value)
 
 
 class ProductCreate(BaseModel):
@@ -112,14 +125,7 @@ class RestaurantOrderCreate(BaseModel):
     @field_validator("customer_phone")
     @classmethod
     def validate_customer_phone(cls, value: str) -> str:
-        phone = value.strip()
-        digits = re.sub(r"\D", "", phone)
-        if (
-            not re.fullmatch(r"\+?[0-9\s().-]+", phone)
-            or not 7 <= len(digits) <= 15
-        ):
-            raise ValueError("Enter a valid phone number with 7 to 15 digits.")
-        return phone
+        return _validate_phone_number(value)
 
 
 class OrderEstimateCreate(BaseModel):

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createOrder, createProduct, deleteProduct, dismissRestaurantOrder, estimateOrder, getCategories, getProducts, getRestaurantName, getRestaurantOrders, updateRestaurantSettings } from './restaurantApi.js'
 import { findRider } from './restaurantApi.js'
+import { updateProfilePhone } from './profileApi.js'
 import GoogleAddressInput from './GoogleAddressInput.jsx'
 import './restaurant-dashboard.css';
 
@@ -8,6 +9,10 @@ function RestaurantDashboard({ username, onLogout }) {
   const [foods, setFoods] = useState([])
   const [categories, setCategories] = useState([])
   const [restaurantName, setRestaurantName] = useState('Restaurant')
+  const [restaurantPhoneDraft, setRestaurantPhoneDraft] = useState('')
+  const [restaurantPhoneError, setRestaurantPhoneError] = useState('')
+  const [restaurantPhoneStatus, setRestaurantPhoneStatus] = useState('')
+  const [isSavingRestaurantPhone, setIsSavingRestaurantPhone] = useState(false)
   const [restaurantAddress, setRestaurantAddress] = useState('')
   const [restaurantAddressDraft, setRestaurantAddressDraft] = useState('')
   const [restaurantCoordinates, setRestaurantCoordinates] = useState(null)
@@ -53,6 +58,7 @@ function RestaurantDashboard({ username, onLogout }) {
       .then(([products, restaurant, categoryList]) => {
         setFoods(products)
         setRestaurantName(restaurant.name)
+        setRestaurantPhoneDraft(restaurant.phone_number || '')
         setRestaurantAddress(restaurant.address || '')
         setRestaurantAddressDraft(restaurant.address || '')
         const coordinates = restaurant.latitude !== null && restaurant.longitude !== null
@@ -209,6 +215,24 @@ function RestaurantDashboard({ username, onLogout }) {
       setRestaurantAddressError(requestError.message || 'Az étterem címének mentése nem sikerült.')
     } finally {
       setIsSavingRestaurantAddress(false)
+    }
+  }
+
+  async function saveRestaurantPhone(event) {
+    event.preventDefault()
+    if (isSavingRestaurantPhone) return
+
+    setIsSavingRestaurantPhone(true)
+    setRestaurantPhoneError('')
+    setRestaurantPhoneStatus('')
+    try {
+      const savedPhone = await updateProfilePhone(restaurantPhoneDraft.trim(), username)
+      setRestaurantPhoneDraft(savedPhone.phone_number)
+      setRestaurantPhoneStatus('A telefonszám elmentve.')
+    } catch (requestError) {
+      setRestaurantPhoneError(requestError.message || 'A telefonszám mentése nem sikerült.')
+    } finally {
+      setIsSavingRestaurantPhone(false)
     }
   }
 
@@ -403,6 +427,27 @@ function RestaurantDashboard({ username, onLogout }) {
             </button>
             {showProfileMenu && (
               <div className="profile-menu">
+                <form className="profile-phone-settings" onSubmit={saveRestaurantPhone}>
+                  <label htmlFor="restaurant-phone-number">Telefonszám</label>
+                  <input
+                    id="restaurant-phone-number"
+                    type="tel"
+                    autoComplete="tel"
+                    maxLength={32}
+                    value={restaurantPhoneDraft}
+                    required
+                    onChange={(event) => {
+                      setRestaurantPhoneDraft(event.target.value)
+                      setRestaurantPhoneError('')
+                      setRestaurantPhoneStatus('')
+                    }}
+                  />
+                  {restaurantPhoneError && <p className="restaurant-address-message error" role="alert">{restaurantPhoneError}</p>}
+                  {restaurantPhoneStatus && <p className="restaurant-address-message success" role="status">{restaurantPhoneStatus}</p>}
+                  <button type="submit" disabled={isSavingRestaurantPhone}>
+                    {isSavingRestaurantPhone ? 'Mentés...' : 'Telefonszám mentése'}
+                  </button>
+                </form>
                 <button
                   type="button"
                   aria-expanded={showRestaurantAddress}
@@ -414,7 +459,7 @@ function RestaurantDashboard({ username, onLogout }) {
                     setRestaurantAddressStatus('')
                   }}
                 >
-                  {showRestaurantAddress ? 'Címbeállítások bezárása' : 'Étterem címe'}
+                  {showRestaurantAddress ? 'Címbeállítások bezárása' : 'Beállítások'}
                 </button>
                 {showRestaurantAddress && (
                   <form className="restaurant-address-settings" onSubmit={saveRestaurantAddress}>

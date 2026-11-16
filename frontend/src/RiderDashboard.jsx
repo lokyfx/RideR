@@ -3,6 +3,7 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { watchGps } from './gps.js'
+import { updateProfilePhone } from './profileApi.js'
 
 const riderIcon = L.divIcon({
   className: 'rider-pin',
@@ -56,6 +57,7 @@ function RiderDashboard({ username, onLogout }) {
   const [activeOfferId, setActiveOfferId] = useState(null)
   const [acceptProgress, setAcceptProgress] = useState(0)
   const knownOfferIdsRef = useRef(null)
+  const phoneInitializedRef = useRef(false)
   const [connectionStatus, setConnectionStatus] = useState('')
   const [currentLocation, setCurrentLocation] = useState(null)
   const [locationError, setLocationError] = useState(() => (
@@ -64,12 +66,20 @@ function RiderDashboard({ username, onLogout }) {
       : 'Location is not supported by this browser'
   ))
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [phoneDraft, setPhoneDraft] = useState('')
+  const [phoneError, setPhoneError] = useState('')
+  const [phoneStatus, setPhoneStatus] = useState('')
+  const [isSavingPhone, setIsSavingPhone] = useState(false)
 
   const refreshDashboard = useCallback(async () => {
     try {
       const response = await fetch(`/api/dashboard?username=${encodeURIComponent(username)}`)
       if (!response.ok) throw new Error('Dashboard could not be loaded')
       const data = await response.json()
+      if (!phoneInitializedRef.current) {
+        setPhoneDraft(data.rider.phone_number || '')
+        phoneInitializedRef.current = true
+      }
       const offers = data.orders.filter((order) => order.is_offer)
       if (knownOfferIdsRef.current) {
         const newOffer = offers.find((order) => !knownOfferIdsRef.current.has(order.id))
@@ -99,6 +109,24 @@ function RiderDashboard({ username, onLogout }) {
       window.clearInterval(intervalId)
     }
   }, [refreshDashboard])
+
+  async function savePhoneNumber(event) {
+    event.preventDefault()
+    if (isSavingPhone) return
+
+    setIsSavingPhone(true)
+    setPhoneError('')
+    setPhoneStatus('')
+    try {
+      const savedPhone = await updateProfilePhone(phoneDraft.trim(), username)
+      setPhoneDraft(savedPhone.phone_number)
+      setPhoneStatus('Phone number saved.')
+    } catch (requestError) {
+      setPhoneError(requestError.message || 'The phone number could not be saved.')
+    } finally {
+      setIsSavingPhone(false)
+    }
+  }
 
   useEffect(() => {
     return watchGps(
@@ -241,6 +269,27 @@ function RiderDashboard({ username, onLogout }) {
             </button>
             {showProfileMenu && (
               <div className="profile-menu">
+                <form className="profile-phone-settings" onSubmit={savePhoneNumber}>
+                  <label htmlFor="rider-phone-number">Phone number</label>
+                  <input
+                    id="rider-phone-number"
+                    type="tel"
+                    autoComplete="tel"
+                    maxLength={32}
+                    value={phoneDraft}
+                    required
+                    onChange={(event) => {
+                      setPhoneDraft(event.target.value)
+                      setPhoneError('')
+                      setPhoneStatus('')
+                    }}
+                  />
+                  {phoneError && <p className="restaurant-address-message error" role="alert">{phoneError}</p>}
+                  {phoneStatus && <p className="restaurant-address-message success" role="status">{phoneStatus}</p>}
+                  <button type="submit" disabled={isSavingPhone}>
+                    {isSavingPhone ? 'Saving...' : 'Save phone number'}
+                  </button>
+                </form>
                 <button type="button" onClick={onLogout}>Log out</button>
               </div>
             )}

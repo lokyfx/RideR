@@ -3,11 +3,11 @@ import hmac
 import secrets
 
 import psycopg
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from app.categories import ensure_restaurant_categories
 from app.database import RESTAURANT_ID, get_connection
-from app.schemas import LoginCredentials, RegistrationCredentials
+from app.schemas import LoginCredentials, PhoneNumberUpdate, RegistrationCredentials
 
 router = APIRouter(prefix="/api")
 PASSWORD_HASH_ITERATIONS = 600_000
@@ -90,3 +90,36 @@ def register(credentials: RegistrationCredentials) -> dict[str, str]:
         raise HTTPException(status_code=409, detail="Ez a felhasználónév már foglalt.") from error
 
     return {"username": credentials.username}
+
+
+@router.put("/profile/phone")
+def update_profile_phone(
+    phone: PhoneNumberUpdate, username: str = Query(...)
+) -> dict[str, str]:
+    with get_connection() as connection:
+        user = connection.execute(
+            """
+            UPDATE app_user
+            SET phone_number = %s
+            WHERE username = %s
+            RETURNING role
+            """,
+            (phone.phone_number, username),
+        ).fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found.")
+
+        if user["role"] == "restaurant":
+            restaurant = connection.execute(
+                """
+                UPDATE restaurant
+                SET phone_number = %s
+                WHERE name = %s
+                RETURNING restaurant_id
+                """,
+                (phone.phone_number, username),
+            ).fetchone()
+            if not restaurant:
+                raise HTTPException(status_code=404, detail="Restaurant not found.")
+
+    return {"phone_number": phone.phone_number}
