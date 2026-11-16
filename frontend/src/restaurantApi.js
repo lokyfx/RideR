@@ -10,8 +10,21 @@ export async function getProducts(username) {
 
 export async function getRestaurantName(username) {
   const response = await fetch(endpoint('/api/restaurant/name', username))
-  if (!response.ok) throw new Error('Restaurant name could not be loaded')
+  if (!response.ok) throw new Error('Restaurant details could not be loaded')
   return response.json()
+}
+
+export async function updateRestaurantAddress(address, latitude, longitude, username) {
+  const response = await fetch(endpoint('/api/restaurant/address', username), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address, latitude, longitude }),
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || 'Restaurant address could not be saved')
+  }
+  return data
 }
 
 export async function getCategories(username) {

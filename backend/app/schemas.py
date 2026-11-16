@@ -35,6 +35,8 @@ class ProductCreate(BaseModel):
 
 class RestaurantAddressUpdate(BaseModel):
     address: str = Field(min_length=1, max_length=500)
+    latitude: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    longitude: float = Field(ge=-180, le=180, allow_inf_nan=False)
 
     @field_validator("address")
     @classmethod
@@ -52,6 +54,8 @@ class OrderItemCreate(BaseModel):
 
 class RestaurantOrderCreate(BaseModel):
     delivery_address: str = Field(min_length=1, max_length=500)
+    delivery_latitude: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    delivery_longitude: float = Field(ge=-180, le=180, allow_inf_nan=False)
     customer_phone: str = Field(min_length=7, max_length=32)
     car_required: bool = False
     items: list[OrderItemCreate] = Field(min_length=1)

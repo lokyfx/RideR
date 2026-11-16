@@ -26,6 +26,7 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
             """
             SELECT o.order_id, COALESCE(customer.username, 'Vendég') AS customer,
                  r.name AS restaurant, d.delivery_address AS address,
+                 d.delivery_distance_km,
                  d.customer_phone AS phone,
                   d.delivery_status, o.car_required,
                  (d.rider_id IS NULL OR d.delivery_status = 'offered') AS is_offer
@@ -74,6 +75,11 @@ def get_dashboard(username: str = Query(...)) -> dict[str, Any]:
             "customer": row["customer"],
             "restaurant": row["restaurant"],
             "address": row["address"],
+            "delivery_distance_km": (
+                float(row["delivery_distance_km"])
+                if row["delivery_distance_km"] is not None
+                else None
+            ),
             "phone": row["phone"],
             "status": row["delivery_status"].replace("_", " ").title(),
             "car_required": row["car_required"],

@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.categories import ensure_restaurant_categories
 from app.database import get_connection
-from app.rider_dispatch import dispatch_order
+from app.rider_dispatch import dispatch_order, distance_km
 from app.schemas import ProductCreate, RestaurantAddressUpdate, RestaurantOrderCreate
 
 router = APIRouter(prefix="/api/restaurant", tags=["restaurant"])
@@ -28,34 +28,52 @@ def get_restaurant_name(username: str = Query(...)) -> dict[str, str]:
     restaurant_id = get_restaurant_id(username)
     with get_connection() as connection:
         restaurant = connection.execute(
-            "SELECT name, address FROM restaurant WHERE restaurant_id = %s",
+            """
+            SELECT name, address, latitude, longitude
+            FROM restaurant
+            WHERE restaurant_id = %s
+            """,
             (restaurant_id,),
         ).fetchone()
 
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found.")
-    return {"name": restaurant["name"], "address": restaurant["address"] or ""}
+    return {
+        "name": restaurant["name"],
+        "address": restaurant["address"] or "",
+        "latitude": restaurant["latitude"],
+        "longitude": restaurant["longitude"],
+    }
 
 
 @router.put("/address")
 def update_restaurant_address(
     address_update: RestaurantAddressUpdate, username: str = Query(...)
-) -> dict[str, str]:
+) -> dict[str, Any]:
     restaurant_id = get_restaurant_id(username)
     with get_connection() as connection:
         restaurant = connection.execute(
             """
             UPDATE restaurant
-            SET address = %s
+            SET address = %s, latitude = %s, longitude = %s
             WHERE restaurant_id = %s
-            RETURNING address
+            RETURNING address, latitude, longitude
             """,
-            (address_update.address, restaurant_id),
+            (
+                address_update.address,
+                address_update.latitude,
+                address_update.longitude,
+                restaurant_id,
+            ),
         ).fetchone()
 
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found.")
-    return {"address": restaurant["address"]}
+    return {
+        "address": restaurant["address"],
+        "latitude": restaurant["latitude"],
+        "longitude": restaurant["longitude"],
+    }
 
 
 @router.get("/products")
@@ -207,6 +225,24 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
         quantities[item.product_id] = quantities.get(item.product_id, 0) + item.quantity
 
     with get_connection() as connection:
+        restaurant_location = connection.execute(
+            """
+            SELECT latitude, longitude
+            FROM restaurant
+            WHERE restaurant_id = %s
+            """,
+            (restaurant_id,),
+        ).fetchone()
+        if (
+            not restaurant_location
+            or restaurant_location["latitude"] is None
+            or restaurant_location["longitude"] is None
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="Set the restaurant address before creating an order.",
+            )
+
         products = connection.execute(
             """
             SELECT product_id, price
@@ -229,6 +265,15 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
             (Decimal(product_prices[product_id]) * quantity for product_id, quantity in quantities.items()),
             Decimal("0"),
         )
+        delivery_distance_km = round(
+            distance_km(
+                restaurant_location["latitude"],
+                restaurant_location["longitude"],
+                order.delivery_latitude,
+                order.delivery_longitude,
+            ),
+            2,
+        )
         order_id = connection.execute(
             """
             INSERT INTO orders (customer_id, restaurant_id, total_amount, order_status, car_required)
@@ -250,14 +295,26 @@ def create_order(order: RestaurantOrderCreate, username: str = Query(...)) -> di
         connection.execute(
             """
             INSERT INTO delivery (
-                order_id, rider_id, delivery_status, delivery_address, customer_phone
+                order_id, rider_id, delivery_status, delivery_address, customer_phone,
+                delivery_latitude, delivery_longitude, delivery_distance_km
             )
-            VALUES (%s, NULL, 'waiting', %s, %s)
+            VALUES (%s, NULL, 'waiting', %s, %s, %s, %s, %s)
             """,
-            (order_id, order.delivery_address, order.customer_phone),
+            (
+                order_id,
+                order.delivery_address,
+                order.customer_phone,
+                order.delivery_latitude,
+                order.delivery_longitude,
+                delivery_distance_km,
+            ),
         )
 
-    return {"order_id": order_id, "status": "waiting"}
+    return {
+        "order_id": order_id,
+        "status": "waiting",
+        "delivery_distance_km": delivery_distance_km,
+    }
 
 
 @router.post("/orders/{order_id}/find-rider")

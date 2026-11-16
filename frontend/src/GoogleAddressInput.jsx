@@ -47,6 +47,7 @@ function GoogleAddressInput({ value, onChange, placeholder }) {
   useEffect(() => {
     let autocompleteElement
     let selectHandler
+    let inputHandler
     let cancelled = false
 
     loadPlacesScript(apiKey)
@@ -64,15 +65,27 @@ function GoogleAddressInput({ value, onChange, placeholder }) {
         autocompleteElement.style.display = 'block'
         autocompleteElement.style.width = '100%'
         autocompleteElement.style.minHeight = '46px'
+        inputHandler = () => {
+          onChangeRef.current({
+            address: autocompleteElement.value,
+            latitude: null,
+            longitude: null,
+          })
+        }
         selectHandler = async ({ placePrediction }) => {
           const place = placePrediction.toPlace()
-          await place.fetchFields({ fields: ['formattedAddress'] })
+          await place.fetchFields({ fields: ['formattedAddress', 'location'] })
           const selectedAddress = place.formattedAddress?.trim()
           if (selectedAddress) {
             autocompleteElement.value = selectedAddress
-            onChangeRef.current(selectedAddress)
+            onChangeRef.current({
+              address: selectedAddress,
+              latitude: place.location?.lat() ?? null,
+              longitude: place.location?.lng() ?? null,
+            })
           }
         }
+        autocompleteElement.addEventListener('input', inputHandler)
         autocompleteElement.addEventListener('gmp-select', selectHandler)
         containerRef.current.replaceChildren(autocompleteElement)
       })
@@ -84,6 +97,9 @@ function GoogleAddressInput({ value, onChange, placeholder }) {
       cancelled = true
       if (autocompleteElement && selectHandler) {
         autocompleteElement.removeEventListener('gmp-select', selectHandler)
+      }
+      if (autocompleteElement && inputHandler) {
+        autocompleteElement.removeEventListener('input', inputHandler)
       }
       autocompleteElement?.remove()
     }

@@ -190,6 +190,11 @@ function RiderDashboard({ username, onLogout }) {
           <p className="eyebrow">New order offer</p>
           <h2>{offerOrder.id} · {offerOrder.restaurant}</h2>
           <p>{offerOrder.customer} · {offerOrder.address || 'No address provided'}</p>
+          {offerOrder.delivery_distance_km !== null && offerOrder.delivery_distance_km !== undefined && (
+            <p className="rider-delivery-distance">
+              Étterem–cím távolság: {offerOrder.delivery_distance_km.toFixed(2)} km (légvonalban)
+            </p>
+          )}
           {offerOrder.car_required && <small className="rider-order-car">Car requested</small>}
           <label className="accept-slider">
             <span>Slide to accept</span>
@@ -295,6 +300,11 @@ function RiderDashboard({ username, onLogout }) {
                       )}
                     </span>
                     <small>{order.customer} · {order.address || 'No address provided'}</small>
+                    {order.delivery_distance_km !== null && order.delivery_distance_km !== undefined && (
+                      <small className="rider-delivery-distance">
+                        Étterem–cím távolság: {order.delivery_distance_km.toFixed(2)} km (légvonalban)
+                      </small>
+                    )}
                     {order.car_required && <small className="rider-order-car"></small>}
                   </span>
                 </div>
