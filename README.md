@@ -53,6 +53,14 @@ A rendszer a rendelés feladásakor a következő paraméterek súlyozásával v
 
 <img width="1255" height="662" alt="QuickDBD-export" src="https://github.com/user-attachments/assets/a8c9f7bc-2a7d-4871-83c0-4291555ec1b2" />
 
+
+### Basic Database Structure - PosgreSQL - Neon DB - UPDATED
+
+
+<img width="1407" height="1300" alt="Untitled" src="https://github.com/user-attachments/assets/e7bdceca-41c9-4813-a880-4d4478009138" />
+
+
+
 ### Basic Structure - User Oriented
 <img width="815" height="591" alt="v3" src="https://github.com/user-attachments/assets/aa6800ff-e17b-4a8e-9698-319c73b58f2a" />
 
